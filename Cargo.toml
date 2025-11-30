@@ -1,0 +1,44 @@
+[package]
+name = "pushover-mcp-rs"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+authors = ["Christian Wohlert"]
+license = "MIT"
+description = "MCP server for sending push notifications via Pushover API"
+keywords = ["mcp", "pushover", "notifications", "push"]
+categories = ["api-bindings", "command-line-utilities"]
+
+[dependencies]
+# MCP protocol
+rmcp = { version = "0.9", features = ["server", "macros", "transport-io", "schemars"] }
+
+# Async runtime
+tokio = { version = "1.48", features = ["rt-multi-thread", "macros"] }
+
+# Serialization
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+schemars = "1.1"
+
+# HTTP client (using rustls to avoid OpenSSL dependency)
+reqwest = { version = "0.12.24", default-features = false, features = ["json", "rustls-tls"] }
+
+# Error handling
+anyhow = "1.0.100"
+
+# Logging
+tracing = "0.1.43"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+
+# CLI
+clap = { version = "4.5.53", features = ["derive"] }
+
+# Config directory
+dirs = "6.0.0"
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
+panic = "abort"
