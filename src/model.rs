@@ -1,5 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 /// Maximum message length in characters.
 pub const MAX_MESSAGE_LENGTH: usize = 1024;
@@ -40,90 +41,6 @@ impl Priority {
     }
 }
 
-/// Notification sound. Omit to use the user's default sound configured in the Pushover app.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, JsonSchema)]
-#[serde(rename_all = "lowercase")]
-pub enum Sound {
-    /// Pushover default
-    Pushover,
-    /// Bike bell
-    Bike,
-    /// Bugle call
-    Bugle,
-    /// Cash register
-    Cashregister,
-    /// Classical music
-    Classical,
-    /// Cosmic sound
-    Cosmic,
-    /// Falling sound
-    Falling,
-    /// Gamelan bells
-    Gamelan,
-    /// Incoming message
-    Incoming,
-    /// Intermission
-    Intermission,
-    /// Magic chime
-    Magic,
-    /// Mechanical sound
-    Mechanical,
-    /// Piano bar
-    Pianobar,
-    /// Siren (loud, attention-getting)
-    Siren,
-    /// Space alarm
-    Spacealarm,
-    /// Tugboat horn
-    Tugboat,
-    /// Alien sound
-    Alien,
-    /// Climbing sound
-    Climb,
-    /// Persistent alarm
-    Persistent,
-    /// Echo sound
-    Echo,
-    /// Up-down sound
-    Updown,
-    /// Vibrate only, no sound
-    Vibrate,
-    /// No sound or vibration
-    None,
-}
-
-impl Sound {
-    /// Convert to Pushover API string value.
-    #[must_use]
-    pub const fn as_api_str(self) -> &'static str {
-        match self {
-            Self::Pushover => "pushover",
-            Self::Bike => "bike",
-            Self::Bugle => "bugle",
-            Self::Cashregister => "cashregister",
-            Self::Classical => "classical",
-            Self::Cosmic => "cosmic",
-            Self::Falling => "falling",
-            Self::Gamelan => "gamelan",
-            Self::Incoming => "incoming",
-            Self::Intermission => "intermission",
-            Self::Magic => "magic",
-            Self::Mechanical => "mechanical",
-            Self::Pianobar => "pianobar",
-            Self::Siren => "siren",
-            Self::Spacealarm => "spacealarm",
-            Self::Tugboat => "tugboat",
-            Self::Alien => "alien",
-            Self::Climb => "climb",
-            Self::Persistent => "persistent",
-            Self::Echo => "echo",
-            Self::Updown => "updown",
-            Self::Vibrate => "vibrate",
-            Self::None => "none",
-        }
-    }
-}
-
 /// Maximum title length in characters.
 pub const MAX_TITLE_LENGTH: usize = 250;
 /// Maximum URL length in bytes.
@@ -153,9 +70,9 @@ pub struct SendNotificationParams {
     #[serde(default)]
     pub priority: Option<Priority>,
 
-    /// Notification sound. Omit to use the user's default sound configured in the Pushover app.
+    /// Notification sound identifier. Use list_sounds to discover built-in and custom sounds. Omit or use an empty value to use the user's default sound configured in the Pushover app.
     #[serde(default)]
-    pub sound: Option<Sound>,
+    pub sound: Option<String>,
 
     /// Supplementary URL to include with the message (max 512 bytes, per Pushover API)
     #[serde(default)]
@@ -193,6 +110,46 @@ pub struct SendNotificationParams {
 /// Parameters for listing user devices.
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct ListDevicesParams {}
+
+/// Parameters for listing notification sounds.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ListSoundsParams {
+    /// Set true to reload sounds from Pushover instead of using the startup cache.
+    #[serde(default)]
+    pub refresh: Option<bool>,
+}
+
+/// One notification sound supported by the configured Pushover application.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct AvailableSound {
+    #[allow(clippy::doc_markdown)] // Plain text for LLM readability in MCP schema
+    /// Identifier to pass as the sound parameter of send_notification.
+    pub name: String,
+    /// Human-readable sound description from Pushover.
+    pub description: String,
+}
+
+/// Response from Pushover sounds API.
+#[derive(Debug, Deserialize)]
+pub struct PushoverSoundsResponse {
+    pub status: i32,
+    #[serde(default)]
+    pub sounds: Option<BTreeMap<String, String>>,
+    #[serde(default)]
+    pub errors: Option<Vec<String>>,
+}
+
+/// Response for `list_sounds` tool.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct ListSoundsResponse {
+    /// Whether the request succeeded.
+    pub success: bool,
+    /// Human-readable status message.
+    pub message: String,
+    /// Sound identifiers and descriptions that can be used with the sound parameter of send_notification.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sounds: Option<Vec<AvailableSound>>,
+}
 
 /// Response from Pushover validation API.
 #[derive(Debug, Deserialize)]
@@ -321,4 +278,3 @@ pub struct SendNotificationResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub receipt: Option<String>,
 }
-

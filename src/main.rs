@@ -22,9 +22,10 @@ async fn main() -> Result<()> {
 
     // Initialize logging to stderr (stdout is reserved for MCP protocol)
     tracing_subscriber::registry()
-        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-            EnvFilter::new("pushover_mcp_rs=info")
-        }))
+        .with(
+            EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| EnvFilter::new("pushover_mcp_rs=info")),
+        )
         .with(fmt::layer().with_writer(std::io::stderr).with_ansi(false))
         .init();
 
@@ -46,14 +47,15 @@ async fn main() -> Result<()> {
         }
     };
 
-    tracing::info!("Starting Pushover MCP server v{}", env!("CARGO_PKG_VERSION"));
+    tracing::info!(
+        "Starting Pushover MCP server v{}",
+        env!("CARGO_PKG_VERSION")
+    );
 
     // Create MCP server
-    let server = server::PushoverServer::new(
-        env!("CARGO_PKG_NAME"),
-        env!("CARGO_PKG_VERSION"),
-        config,
-    );
+    let server =
+        server::PushoverServer::new(env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), config)
+            .await;
 
     // Connect via stdio transport
     let service = server.serve(stdio()).await?;
