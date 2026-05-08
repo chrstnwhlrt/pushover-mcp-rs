@@ -14,9 +14,9 @@ This server enables LLMs to send push notifications to your devices through the 
 - **Emergency management** - Check receipt status and cancel emergency notifications
 - **Device targeting** - Send to specific devices when needed
 - **Supplementary URLs** - Attach links to notifications
-- **Custom sounds** - Choose from Pushover's sound library
+- **Custom sounds** - Discover and use built-in or account-specific Pushover sounds
 - **Auto-configuration** - Config file created automatically on first run
-- **Fast startup** - Sub-second initialization
+- **Startup sound cache** - Loads supported sounds when credentials are configured
 
 ## Quick Start
 
@@ -54,13 +54,14 @@ The server communicates via JSON-RPC 2.0 over stdin/stdout.
 
 ## MCP Tools
 
-The server provides 4 tools:
+The server provides 5 tools:
 
 ### Notifications
 
 | Tool | Description |
 |------|-------------|
 | `send_notification` | Send a push notification (only `message` is required) |
+| `list_sounds` | List built-in and custom notification sound identifiers |
 | `list_devices` | List available device names for targeting specific devices |
 
 ### Emergency Management
@@ -79,7 +80,7 @@ The `send_notification` tool supports these parameters:
 | `message` | **Yes** | The notification message (max 1024 characters) |
 | `title` | No | Message title (max 250 characters, defaults to app name) |
 | `priority` | No | One of: `silent`, `low`, `normal` (default), `high`, `emergency` |
-| `sound` | No | One of: `pushover`, `bike`, `bugle`, `cashregister`, `classical`, `cosmic`, `falling`, `gamelan`, `incoming`, `intermission`, `magic`, `mechanical`, `pianobar`, `siren`, `spacealarm`, `tugboat`, `alien`, `climb`, `persistent`, `echo`, `updown`, `vibrate`, `none` |
+| `sound` | No | Sound identifier from `list_sounds`, including built-in and custom sounds. Omit or pass an empty value to use the user's default sound. |
 | `url` | No | Supplementary URL to include (max 512 bytes) |
 | `url_title` | No | Title for the URL, requires `url` (max 100 characters) |
 | `html` | No | Enable HTML formatting (b, i, u, a, font tags). Cannot use with `monospace` |
@@ -99,6 +100,12 @@ The `send_notification` tool supports these parameters:
 | `normal` | Default notification with sound and vibration (default if not specified). |
 | `high` | Important: always plays sound and vibrates, even during quiet hours. |
 | `emergency` | Critical: repeats every 60s for 1 hour until acknowledged. Returns receipt ID. |
+
+## Notification Sounds
+
+On startup, the server loads the supported sound list from Pushover using the configured application token. This includes Pushover's built-in sounds plus any custom sounds uploaded to the account that owns the token.
+
+Use `list_sounds` to see the cached list. Pass `refresh: true` to reload after adding or removing custom sounds.
 
 ## MCP Client Integration
 
@@ -287,6 +294,17 @@ Returns a `receipt` ID for tracking acknowledgment.
 ```
 
 ### Custom Sound
+
+List the supported sound identifiers:
+
+```json
+{
+  "name": "list_sounds",
+  "arguments": {}
+}
+```
+
+Send with a built-in or custom sound identifier:
 
 ```json
 {

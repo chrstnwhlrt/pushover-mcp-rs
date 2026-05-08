@@ -1,29 +1,37 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{Arc, RwLock},
+    time::Duration,
+};
 
 use rmcp::{
-    Json, ServerHandler, tool, tool_handler, tool_router,
+    Json, ServerHandler,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
     model::{Implementation, ProtocolVersion, ServerCapabilities, ServerInfo},
+    tool, tool_handler, tool_router,
 };
 
 use crate::{
     config::{self, Config},
     model::{
-        CancelEmergencyParams, CancelEmergencyResponse, CheckReceiptParams, CheckReceiptResponse,
-        ListDevicesParams, ListDevicesResponse, PushoverApiResponse, PushoverCancelResponse,
-        PushoverReceiptResponse, PushoverValidateResponse, SendNotificationParams,
-        SendNotificationResponse, MAX_EXPIRE_SECONDS, MAX_MESSAGE_LENGTH, MAX_TITLE_LENGTH,
-        MAX_URL_LENGTH, MAX_URL_TITLE_LENGTH, MIN_RETRY_SECONDS,
+        AvailableSound, CancelEmergencyParams, CancelEmergencyResponse, CheckReceiptParams,
+        CheckReceiptResponse, ListDevicesParams, ListDevicesResponse, ListSoundsParams,
+        ListSoundsResponse, MAX_EXPIRE_SECONDS, MAX_MESSAGE_LENGTH, MAX_TITLE_LENGTH,
+        MAX_URL_LENGTH, MAX_URL_TITLE_LENGTH, MIN_RETRY_SECONDS, PushoverApiResponse,
+        PushoverCancelResponse, PushoverReceiptResponse, PushoverSoundsResponse,
+        PushoverValidateResponse, SendNotificationParams, SendNotificationResponse,
     },
 };
 
 const PUSHOVER_API_URL: &str = "https://api.pushover.net/1/messages.json";
+const PUSHOVER_SOUNDS_URL: &str = "https://api.pushover.net/1/sounds.json";
 const PUSHOVER_VALIDATE_URL: &str = "https://api.pushover.net/1/users/validate.json";
 const PUSHOVER_RECEIPTS_URL: &str = "https://api.pushover.net/1/receipts";
 const HTTP_CONNECT_TIMEOUT_SECS: u64 = 10;
 const HTTP_TIMEOUT_SECS: u64 = 30;
+const SOUNDS_HTTP_TIMEOUT_SECS: u64 = 5;
 
-const NO_TOKEN_ERROR: &str = "No Pushover API token configured. The user must add their token to the config file.";
+const NO_TOKEN_ERROR: &str =
+    "No Pushover API token configured. The user must add their token to the config file.";
 
 /// Trim an optional string, returning None if empty after trimming.
 #[inline]
@@ -139,13 +147,16 @@ pub struct PushoverServer {
     version: &'static str,
     config: Arc<Config>,
     http_client: reqwest::Client,
+    sounds_cache: Arc<RwLock<Option<Vec<AvailableSound>>>>,
     tool_router: ToolRouter<Self>,
 }
 
 #[tool_router]
 impl PushoverServer {
     /// Send a push notification via Pushover.
-    #[tool(description = "Send a push notification. Only message is required. Returns {success: bool, message: string, request_id: string, receipt?: string}. Receipt is only present for emergency priority.")]
+    #[tool(
+        description = "Send a push notification. Only message is required. Returns {success: bool, message: string, request_id: string, receipt?: string}. Receipt is only present for emergency priority."
+    )]
     async fn send_notification(
         &self,
         Parameters(params): Parameters<SendNotificationParams>,
@@ -159,11 +170,13 @@ impl PushoverServer {
         }
 
         // Get user key from config
-        let user_key = self.config.default_user_key.clone()
+        let user_key = self
+            .config
+            .default_user_key
+            .clone()
             .ok_or("No default_user_key configured. Add your user key to the config file.")?;
 
-        let device = trim_optional(params.device)
-            .or_else(|| self.config.default_device.clone());
+        let device = trim_optional(params.device).or_else(|| self.config.default_device.clone());
 
         // Pre-allocate form vector with estimated capacity
         let mut form = Vec::with_capacity(16);
@@ -193,8 +206,8 @@ impl PushoverServer {
             }
         }
 
-        if let Some(sound) = params.sound {
-            form.push(("sound", sound.as_api_str().to_string()));
+        if let Some(sound) = trim_optional(params.sound) {
+            form.push(("sound", sound));
         }
 
         if let Some(url) = trim_optional(params.url) {
@@ -222,7 +235,8 @@ impl PushoverServer {
         }
 
         // Send the request
-        let response = self.http_client
+        let response = self
+            .http_client
             .post(PUSHOVER_API_URL)
             .form(&form)
             .send()
@@ -251,15 +265,56 @@ impl PushoverServer {
         } else {
             Ok(Json(SendNotificationResponse {
                 success: false,
-                message: format!("Pushover API error: {}", format_api_errors(api_response.errors)),
+                message: format!(
+                    "Pushover API error: {}",
+                    format_api_errors(api_response.errors)
+                ),
                 request_id: Some(api_response.request),
                 receipt: None,
             }))
         }
     }
 
+    /// List supported notification sounds.
+    #[tool(
+        description = "List notification sounds supported by the configured Pushover application. Includes built-in and account custom sounds. Returns {success: bool, message: string, sounds?: [{name: string, description: string}]}. Use name as send_notification.sound. Set refresh=true after changing custom sounds."
+    )]
+    async fn list_sounds(
+        &self,
+        Parameters(params): Parameters<ListSoundsParams>,
+    ) -> Result<Json<ListSoundsResponse>, String> {
+        // Check token is configured
+        if !config::is_token_configured(&self.config) {
+            return Err(NO_TOKEN_ERROR.to_string());
+        }
+
+        let use_cache = params.refresh != Some(true);
+        if use_cache && let Some(sounds) = self.cached_sounds()? {
+            return Ok(Json(ListSoundsResponse {
+                success: true,
+                message: format!("Loaded {} sounds from startup cache", sounds.len()),
+                sounds: Some(sounds),
+            }));
+        }
+
+        match self.refresh_sounds_cache().await {
+            Ok(sounds) => Ok(Json(ListSoundsResponse {
+                success: true,
+                message: format!("Loaded {} sounds from Pushover", sounds.len()),
+                sounds: Some(sounds),
+            })),
+            Err(e) => Ok(Json(ListSoundsResponse {
+                success: false,
+                message: e,
+                sounds: None,
+            })),
+        }
+    }
+
     /// List available devices for a user.
-    #[tool(description = "List available device names. Returns {success: bool, message: string, devices?: string[]}. Only use if user explicitly asks for a specific device.")]
+    #[tool(
+        description = "List available device names. Returns {success: bool, message: string, devices?: string[]}. Only use if user explicitly asks for a specific device."
+    )]
     async fn list_devices(
         &self,
         Parameters(_params): Parameters<ListDevicesParams>,
@@ -270,11 +325,15 @@ impl PushoverServer {
         }
 
         // Get user key from config
-        let user_key = self.config.default_user_key.clone()
+        let user_key = self
+            .config
+            .default_user_key
+            .clone()
             .ok_or("No default_user_key configured. Add your user key to the config file.")?;
 
         // Call validation endpoint
-        let response = self.http_client
+        let response = self
+            .http_client
             .post(PUSHOVER_VALIDATE_URL)
             .form(&[
                 ("token", self.config.token.as_str()),
@@ -303,14 +362,19 @@ impl PushoverServer {
         } else {
             Ok(Json(ListDevicesResponse {
                 success: false,
-                message: format!("Validation failed: {}", format_api_errors(api_response.errors)),
+                message: format!(
+                    "Validation failed: {}",
+                    format_api_errors(api_response.errors)
+                ),
                 devices: None,
             }))
         }
     }
 
     /// Check the status of an emergency notification.
-    #[tool(description = "Check if an emergency notification was acknowledged. Returns {success: bool, message: string, acknowledged?: bool, acknowledged_by?: string, expired?: bool}. Use the receipt from send_notification.")]
+    #[tool(
+        description = "Check if an emergency notification was acknowledged. Returns {success: bool, message: string, acknowledged?: bool, acknowledged_by?: string, expired?: bool}. Use the receipt from send_notification."
+    )]
     async fn check_emergency_receipt(
         &self,
         Parameters(params): Parameters<CheckReceiptParams>,
@@ -328,7 +392,8 @@ impl PushoverServer {
         // GET request to receipts endpoint
         let token = &self.config.token;
         let url = format!("{PUSHOVER_RECEIPTS_URL}/{receipt}.json?token={token}");
-        let response = self.http_client
+        let response = self
+            .http_client
             .get(&url)
             .send()
             .await
@@ -351,7 +416,8 @@ impl PushoverServer {
             let message = if acknowledged {
                 format!(
                     "Notification was acknowledged{}",
-                    api_response.acknowledged_by
+                    api_response
+                        .acknowledged_by
                         .as_ref()
                         .map(|d| format!(" by device '{d}'"))
                         .unwrap_or_default()
@@ -372,7 +438,10 @@ impl PushoverServer {
         } else {
             Ok(Json(CheckReceiptResponse {
                 success: false,
-                message: format!("Receipt check failed: {}", format_api_errors(api_response.errors)),
+                message: format!(
+                    "Receipt check failed: {}",
+                    format_api_errors(api_response.errors)
+                ),
                 acknowledged: None,
                 acknowledged_by: None,
                 expired: None,
@@ -381,7 +450,9 @@ impl PushoverServer {
     }
 
     /// Cancel an emergency notification.
-    #[tool(description = "Cancel an emergency notification that is still retrying. Returns {success: bool, message: string}. Use the receipt from send_notification.")]
+    #[tool(
+        description = "Cancel an emergency notification that is still retrying. Returns {success: bool, message: string}. Use the receipt from send_notification."
+    )]
     async fn cancel_emergency_notification(
         &self,
         Parameters(params): Parameters<CancelEmergencyParams>,
@@ -398,7 +469,8 @@ impl PushoverServer {
 
         // POST request to cancel endpoint
         let url = format!("{PUSHOVER_RECEIPTS_URL}/{receipt}/cancel.json");
-        let response = self.http_client
+        let response = self
+            .http_client
             .post(&url)
             .form(&[("token", self.config.token.as_str())])
             .send()
@@ -430,7 +502,7 @@ impl PushoverServer {
 }
 
 impl PushoverServer {
-    pub fn new(name: &'static str, version: &'static str, config: Config) -> Self {
+    pub async fn new(name: &'static str, version: &'static str, config: Config) -> Self {
         let user_agent = format!("{name}/{version}");
         let http_client = reqwest::Client::builder()
             .user_agent(user_agent)
@@ -439,13 +511,99 @@ impl PushoverServer {
             .build()
             .expect("Failed to create HTTP client");
 
-        Self {
+        let server = Self {
             name,
             version,
             config: Arc::new(config),
             http_client,
+            sounds_cache: Arc::new(RwLock::new(None)),
             tool_router: Self::tool_router(),
+        };
+
+        if config::is_token_configured(&server.config) {
+            match server.refresh_sounds_cache().await {
+                Ok(sounds) => tracing::info!("Loaded {} Pushover sounds", sounds.len()),
+                Err(e) => tracing::warn!("Failed to load Pushover sounds during startup: {}", e),
+            }
         }
+
+        server
+    }
+
+    async fn fetch_sounds(&self) -> Result<Vec<AvailableSound>, String> {
+        let response = self
+            .http_client
+            .get(PUSHOVER_SOUNDS_URL)
+            .query(&[("token", self.config.token.as_str())])
+            .timeout(Duration::from_secs(SOUNDS_HTTP_TIMEOUT_SECS))
+            .send()
+            .await
+            .map_err(|e| format!("HTTP request failed: {e}"))?;
+
+        let status = response.status();
+        if !status.is_success() && !status.is_client_error() {
+            return Err(format!("Pushover API returned HTTP {status}"));
+        }
+
+        let api_response: PushoverSoundsResponse = response
+            .json()
+            .await
+            .map_err(|e| format!("Failed to parse Pushover sounds response: {e}"))?;
+
+        if api_response.status == 1 {
+            Ok(api_response
+                .sounds
+                .unwrap_or_default()
+                .into_iter()
+                .map(|(name, description)| AvailableSound { name, description })
+                .collect())
+        } else {
+            Err(format!(
+                "Sounds lookup failed: {}",
+                format_api_errors(api_response.errors)
+            ))
+        }
+    }
+
+    async fn refresh_sounds_cache(&self) -> Result<Vec<AvailableSound>, String> {
+        let sounds = self.fetch_sounds().await?;
+        *self
+            .sounds_cache
+            .write()
+            .map_err(|_| "Sounds cache lock poisoned".to_string())? = Some(sounds.clone());
+        Ok(sounds)
+    }
+
+    fn cached_sounds(&self) -> Result<Option<Vec<AvailableSound>>, String> {
+        self.sounds_cache
+            .read()
+            .map(|cache| cache.clone())
+            .map_err(|_| "Sounds cache lock poisoned".to_string())
+    }
+
+    fn sound_instructions(&self) -> String {
+        let Some(sounds) = self
+            .sounds_cache
+            .read()
+            .ok()
+            .and_then(|cache| cache.clone())
+        else {
+            return "Use list_sounds to discover built-in and custom notification sound IDs before setting send_notification.sound.".to_string();
+        };
+
+        if sounds.is_empty() {
+            return "Use list_sounds to discover built-in and custom notification sound IDs before setting send_notification.sound.".to_string();
+        }
+
+        let sound_ids = sounds
+            .iter()
+            .map(|sound| sound.name.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        format!(
+            "Notification sound IDs loaded at startup: {sound_ids}. Use list_sounds with refresh=true if the account's custom sounds changed."
+        )
     }
 }
 
@@ -460,14 +618,15 @@ impl ServerHandler for PushoverServer {
                 version: self.version.to_string(),
                 ..Default::default()
             },
-            instructions: Some(
+            instructions: Some(format!(
                 "Send push notifications to the user's devices. \
                  For most notifications, just call send_notification with a message - all other parameters are optional. \
                  Do NOT use device parameter or list_devices unless the user explicitly asks for a specific device. \
                  For urgent notifications requiring acknowledgment, use priority=\"emergency\" which returns a receipt ID \
-                 that can be used with check_emergency_receipt or cancel_emergency_notification."
-                    .to_string(),
-            ),
+                 that can be used with check_emergency_receipt or cancel_emergency_notification. \
+                 {}",
+                self.sound_instructions()
+            )),
         }
     }
 }
