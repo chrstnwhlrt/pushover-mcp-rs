@@ -1,0 +1,26 @@
+{
+  "flatten": true,
+  "emulate": {"latest_receipt": true, "device_hint": ["pixel9", "thinkpad"]},
+  "instructions": "Sends push notifications to the user's phone and other devices through Pushover. send_notification needs only message and sender; leave out every other parameter the user does not ask for. Without device a notification reaches all of the user's devices, the phone included. Priority high is for something important, low for a quiet notification without sound, silent for no alert at all, emergency for an alarm that repeats until the user acknowledges it. check_emergency_receipt and cancel_emergency_notification act on the latest emergency notification unless you give a receipt. Pushover cannot schedule: every notification goes out at once.",
+  "tools": {
+    "send_notification": {
+      "description": "Send a push notification to the user's devices now. message and sender are required. Returns the request ID, and for emergency priority a receipt.",
+      "params": {
+        "sender": "Who sends it, shown first in the title: your own name. A session or project you work in may follow in parentheses, e.g. \"Claude (shop backend)\". At most 64 characters.",
+        "device": "Only to reach one device and not the others: its name from list_devices (several joined with commas). Omit to reach all devices; a notification \"to my phone\" needs none."
+      }
+    },
+    "check_emergency_receipt": {
+      "description": "Check whether an emergency notification was acknowledged or has expired: the latest one sent, or the one of receipt.",
+      "required": [],
+      "params": {"receipt": "Receipt of the emergency notification; omit for the latest one sent."}
+    },
+    "cancel_emergency_notification": {
+      "description": "Stop the repeated alerts of an emergency notification: the latest one sent, the one of receipt, or all sent with tag.",
+      "params": {
+        "receipt": "Receipt of the emergency notification to stop; omit receipt and tag for the latest one sent.",
+        "tag": "Stop every emergency notification sent with this tag."
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "flatten": true,
+  "emulate": {"latest_receipt": true, "default_sender": "Otomo", "device_hint": ["pixel9", "thinkpad"]},
+  "instructions": "Sends push notifications to the user's phone and other devices through Pushover. send_notification needs only message; leave out every other parameter the user does not ask for. Without device a notification reaches all of the user's devices, the phone included. Priority high is for something important, emergency for an alarm that repeats until the user acknowledges it, low for no sound and no vibration, silent for no alert at all; for vibration alone use the sound vibrate. A sound the user names that is not among the built-in names of the sound parameter is one of the account's own: call list_sounds and take its name. check_emergency_receipt and cancel_emergency_notification act on the latest emergency notification unless you give a receipt. Pushover cannot schedule: every notification goes out at once.",
+  "tools": {
+    "send_notification": {
+      "description": "Send a push notification to the user's devices now. Only message is required. Returns the request ID, and for emergency priority a receipt.",
+      "required": ["message"],
+      "params": {
+        "sender": "Who sends it, shown first in the title: your own name, with the session or project you work in if there is one, e.g. \"Claude (shop backend)\". Omit it to send under the name the server is set up with.",
+        "device": "Only to reach one device and not the others: its name from list_devices (several joined with commas). Omit to reach all devices; a notification \"to my phone\" needs none.",
+        "sound": "Sound name. Built in: pushover, bike (bicycle bell), bugle, cashregister, classical, cosmic, falling, gamelan, incoming, intermission, magic, mechanical, pianobar, siren, spacealarm, tugboat, alien, climb, persistent, echo, updown, vibrate (vibration only), none (silent). The account's own sounds only list_sounds names. Omit for the user's default sound."
+      }
+    },
+    "check_emergency_receipt": {
+      "description": "Check whether an emergency notification was acknowledged or has expired: the latest one sent, or the one of receipt.",
+      "required": [],
+      "params": {"receipt": "Receipt of the emergency notification; omit for the latest one sent."}
+    },
+    "cancel_emergency_notification": {
+      "description": "Stop the repeated alerts of an emergency notification: the latest one sent, the one of receipt, or all sent with tag.",
+      "params": {
+        "receipt": "Receipt of the emergency notification to stop; omit receipt and tag for the latest one sent.",
+        "tag": "Stop every emergency notification sent with this tag."
+      }
+    }
+  }
+}

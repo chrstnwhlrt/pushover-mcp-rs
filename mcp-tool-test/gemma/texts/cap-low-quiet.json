@@ -1,0 +1,7 @@
+{
+ "emulate": {
+  "max_priority": "low",
+  "absent_is_normal": true,
+  "downgrade": "Sent as a quiet notification, with {cap} priority instead of {priority}: this client may only send quiet notifications (--max-priority {cap}). Tell the user that it went out as a quiet notification."
+ }
+}

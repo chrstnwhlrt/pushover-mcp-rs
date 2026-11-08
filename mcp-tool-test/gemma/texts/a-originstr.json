@@ -1,0 +1,63 @@
+{
+ "flatten": true,
+ "emulate": {
+  "latest_receipt": true,
+  "default_sender": "Otomo",
+  "device_check": [
+   "pixel9",
+   "thinkpad"
+  ],
+  "sound_check": {
+   "pushover": "Pushover (default)",
+   "bike": "Bike",
+   "bugle": "Bugle",
+   "cashregister": "Cash Register",
+   "classical": "Classical",
+   "cosmic": "Cosmic",
+   "falling": "Falling",
+   "gamelan": "Gamelan",
+   "incoming": "Incoming",
+   "intermission": "Intermission",
+   "magic": "Magic",
+   "mechanical": "Mechanical",
+   "pianobar": "Piano Bar",
+   "siren": "Siren",
+   "spacealarm": "Space Alarm",
+   "tugboat": "Tug Boat",
+   "alien": "Alien Alarm (long)",
+   "climb": "Climb (long)",
+   "persistent": "Persistent (long)",
+   "echo": "Pushover Echo (long)",
+   "updown": "Up Down (long)",
+   "vibrate": "Vibrate Only",
+   "none": "None (silent)",
+   "kuechengong": "Küchengong"
+  }
+ },
+ "tools": {
+  "send_notification": {
+   "description": "Send a push notification to the user's devices now. Only message is required. Returns the request ID, and for emergency priority a receipt.",
+   "hide": [
+    "sender"
+   ],
+   "params": {
+    "device": "Only to reach one device and not the others: its name as list_devices gives it (several joined with commas). Device names are the user's own, such as iphone15 or work-mbp, never a word like phone or laptop: call list_devices first. Omit to reach all devices; a notification \"to my phone\" needs none.",
+    "sound": "Sound name. Built in: pushover, bike (bicycle bell), bugle, cashregister, classical, cosmic, falling, gamelan, incoming, intermission, magic, mechanical, pianobar, siren, spacealarm, tugboat, alien, climb, persistent, echo, updown, vibrate (vibration only), none (silent). The account's own sounds, such as a gong, only list_sounds names. Omit for the user's default sound."
+   }
+  },
+  "check_emergency_receipt": {
+   "description": "Check whether an emergency notification was acknowledged or has expired: the latest one sent, or the one of receipt.",
+   "required": [],
+   "params": {
+    "receipt": "Receipt of the emergency notification; omit for the latest one sent."
+   }
+  },
+  "cancel_emergency_notification": {
+   "description": "Stop the repeated alerts of an emergency notification: the latest one sent, the one of receipt, or all sent with tag.",
+   "params": {
+    "receipt": "Receipt of the emergency notification to stop; omit receipt and tag for the latest one sent.",
+    "tag": "Stop every emergency notification sent with this tag."
+   }
+  }
+ }
+}

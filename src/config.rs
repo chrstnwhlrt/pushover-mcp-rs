@@ -1,104 +1,173 @@
-use std::path::PathBuf;
+//! The config file: Pushover credentials and defaults.
+//!
+//! The server reads the file on every tool call, so a token added after the
+//! first start is used without restarting the MCP client.
+
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 /// Configuration for the Pushover MCP server.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
     /// Pushover application API token (required)
     #[serde(default)]
     pub token: String,
-    /// Default user/group key (optional, can be overridden per message)
+    /// User or group key the notifications go to (required)
     #[serde(default)]
     pub default_user_key: Option<String>,
-    /// Default device name (optional)
+    /// Device (or comma-separated devices) used when a call names none
     #[serde(default)]
     pub default_device: Option<String>,
 }
 
-/// Get the path to the config file.
-pub fn get_config_path() -> Result<PathBuf> {
-    let config_dir = dirs::config_dir()
-        .context("Could not determine config directory")?;
-
-    Ok(config_dir.join("pushover-mcp-rs").join("config.json"))
+/// `<config dir>/pushover-mcp-rs/config.json`, the config dir being
+/// `$XDG_CONFIG_HOME` or `~/.config` on Linux, `~/Library/Application Support`
+/// on macOS and `%APPDATA%` on Windows.
+pub fn default_path() -> Result<PathBuf> {
+    let config_dir = dirs::config_dir().context("Could not determine the config directory")?;
+    Ok(config_dir.join(env!("CARGO_PKG_NAME")).join("config.json"))
 }
 
-/// Load the configuration from the config file.
+/// Writes an empty config file to fill in, unless the file exists.
 ///
-/// Creates a default config file if it doesn't exist.
-pub fn load_config() -> Result<Config> {
-    let config_path = get_config_path()?;
-
-    if !config_path.exists() {
-        // Create parent directory if needed
-        if let Some(parent) = config_path.parent() {
-            std::fs::create_dir_all(parent)
-                .context("Failed to create config directory")?;
-        }
-
-        // Create default config file
-        let default_config = Config::default();
-        let mut config_json = serde_json::to_string_pretty(&default_config)
-            .context("Failed to serialize default config")?;
-        config_json.push('\n'); // POSIX: text files should end with newline
-
-        std::fs::write(&config_path, config_json)
-            .context("Failed to write default config file")?;
-
-        tracing::info!("Created default config file at: {}", config_path.display());
-
-        return Ok(default_config);
+/// Returns whether a file was written. The file holds the API token, so on
+/// Unix only its owner may read it.
+pub fn create_template_if_missing(path: &Path) -> Result<bool> {
+    if path.exists() {
+        return Ok(false);
+    }
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("Could not create {}", parent.display()))?;
     }
 
-    // Read existing config
-    let config_content = std::fs::read_to_string(&config_path)
-        .context("Failed to read config file")?;
+    let mut content = serde_json::to_string_pretty(&Config::default())
+        .context("Could not serialize the config template")?;
+    content.push('\n');
 
-    let mut config: Config = serde_json::from_str(&config_content)
-        .context("Failed to parse config file")?;
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
+    let mut file = match options.open(path) {
+        Ok(file) => file,
+        // Created between the check above and now, by another server start
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => return Ok(false),
+        Err(e) => {
+            return Err(e).with_context(|| format!("Could not create {}", path.display()));
+        }
+    };
+    file.write_all(content.as_bytes())
+        .with_context(|| format!("Could not write {}", path.display()))?;
+    Ok(true)
+}
 
-    // Normalize config: trim whitespace from all string fields
-    normalize_config(&mut config);
-
+/// Reads and normalizes the config file.
+pub fn load(path: &Path) -> Result<Config> {
+    let content = std::fs::read_to_string(path)
+        .with_context(|| format!("Could not read the config file {}", path.display()))?;
+    let mut config: Config = serde_json::from_str(&content)
+        .with_context(|| format!("The config file {} is not valid", path.display()))?;
+    config.normalize();
     Ok(config)
 }
 
-/// Trim whitespace from config fields to prevent subtle bugs.
-fn normalize_config(config: &mut Config) {
-    // Trim token - whitespace would cause API failures
-    let trimmed_token = config.token.trim();
-    if trimmed_token.len() != config.token.len() {
-        config.token = trimmed_token.to_string();
+impl Config {
+    /// Trims all values; an optional value that is empty then counts as unset.
+    /// Surrounding whitespace in a token or key makes every API call fail.
+    fn normalize(&mut self) {
+        let token = self.token.trim();
+        if token.len() != self.token.len() {
+            self.token = token.to_owned();
+        }
+        self.default_user_key = trim_to_option(self.default_user_key.take());
+        self.default_device = trim_to_option(self.default_device.take());
     }
-
-    // Trim optional fields, set to None if empty after trimming
-    config.default_user_key = config.default_user_key.take().and_then(|s| {
-        let trimmed = s.trim();
-        if trimmed.is_empty() {
-            None
-        } else if trimmed.len() == s.len() {
-            Some(s)
-        } else {
-            Some(trimmed.to_string())
-        }
-    });
-
-    config.default_device = config.default_device.take().and_then(|s| {
-        let trimmed = s.trim();
-        if trimmed.is_empty() {
-            None
-        } else if trimmed.len() == s.len() {
-            Some(s)
-        } else {
-            Some(trimmed.to_string())
-        }
-    });
 }
 
-/// Check if the config has a valid token set.
-#[inline]
-pub fn is_token_configured(config: &Config) -> bool {
-    !config.token.is_empty()
+/// Trims a string; an empty result becomes `None`.
+pub fn trim_to_option(value: Option<String>) -> Option<String> {
+    let value = value?;
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        None
+    } else if trimmed.len() == value.len() {
+        Some(value)
+    } else {
+        Some(trimmed.to_owned())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn trim_to_option_drops_blank_values() {
+        assert_eq!(trim_to_option(None), None);
+        assert_eq!(trim_to_option(Some(String::new())), None);
+        assert_eq!(trim_to_option(Some(" \t\n".into())), None);
+        assert_eq!(
+            trim_to_option(Some(" iphone ".into())),
+            Some("iphone".into())
+        );
+        assert_eq!(trim_to_option(Some("iphone".into())), Some("iphone".into()));
+    }
+
+    #[test]
+    fn load_trims_values() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        std::fs::write(
+            &path,
+            r#"{"token": " abc \n", "default_user_key": "  ", "default_device": " pixel "}"#,
+        )
+        .unwrap();
+        let config = load(&path).unwrap();
+        assert_eq!(
+            config,
+            Config {
+                token: "abc".into(),
+                default_user_key: None,
+                default_device: Some("pixel".into()),
+            }
+        );
+    }
+
+    #[test]
+    fn load_names_the_file_on_errors() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        let error = format!("{:#}", load(&path).unwrap_err());
+        assert!(error.contains(&path.display().to_string()), "{error}");
+
+        std::fs::write(&path, "{ not json").unwrap();
+        let error = format!("{:#}", load(&path).unwrap_err());
+        assert!(error.contains(&path.display().to_string()), "{error}");
+        assert!(error.contains("not valid"), "{error}");
+    }
+
+    #[test]
+    fn template_is_written_once_and_loads_as_default() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("nested").join("config.json");
+        assert!(create_template_if_missing(&path).unwrap());
+        assert!(!create_template_if_missing(&path).unwrap());
+
+        let content = std::fs::read_to_string(&path).unwrap();
+        assert!(content.ends_with("}\n"), "{content}");
+        assert_eq!(load(&path).unwrap(), Config::default());
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(&path).unwrap().permissions().mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
+    }
 }

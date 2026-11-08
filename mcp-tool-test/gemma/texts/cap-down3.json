@@ -1,0 +1,6 @@
+{
+ "emulate": {
+  "max_priority": "normal",
+  "downgrade": "Sent as an ordinary notification, with {cap} priority instead of {priority}: alarms are switched off for this client (--max-priority {cap}). Tell the user that it went out as an ordinary notification."
+ }
+}

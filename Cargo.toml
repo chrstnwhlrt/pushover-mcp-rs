@@ -2,40 +2,56 @@
 name = "pushover-mcp-rs"
 version = "1.0.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.89"
 authors = ["Christian Wohlert"]
 license = "MIT"
 description = "MCP server for sending push notifications via Pushover API"
+repository = "https://github.com/chrstnwhlrt/pushover-mcp-rs"
 keywords = ["mcp", "pushover", "notifications", "push"]
 categories = ["api-bindings", "command-line-utilities"]
 
 [dependencies]
-# MCP protocol
-rmcp = { version = "0.9", features = ["server", "macros", "transport-io", "schemars"] }
+# MCP SDK. The default features only add base64 for prompt content, which
+# this server does not serve.
+rmcp = { version = "3.9", default-features = false, features = ["server", "macros", "transport-io"] }
 
-# Async runtime
-tokio = { version = "1.48", features = ["rt-multi-thread", "macros"] }
+# Async runtime: connection limit and receipt poll lock (sync), receipt poll
+# spacing (time)
+tokio = { version = "1.54", features = ["rt-multi-thread", "macros", "sync", "time"] }
 
 # Serialization
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.145"
-schemars = "1.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+schemars = "1.2"
 
-# HTTP client (using rustls to avoid OpenSSL dependency)
-reqwest = { version = "0.12.24", default-features = false, features = ["json", "rustls-tls"] }
+# RFC 3339 times in tool results (already in the tree through rmcp)
+chrono = { version = "0.4.45", default-features = false, features = ["alloc"] }
+
+# HTTP client. rustls with the platform's CA store, url-encoded forms for
+# the API calls and multipart for image attachments. Responses are parsed
+# with serde_json directly, so the json feature is not needed; HTTP/2 brings
+# nothing for a handful of small requests.
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "form", "multipart"] }
 
 # Error handling
-anyhow = "1.0.100"
+anyhow = "1.0.104"
 
-# Logging
-tracing = "0.1.43"
-tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+# Logging to stderr. ANSI colors are switched off (stderr is a log, not a
+# terminal), so the ansi feature is left out.
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", default-features = false, features = ["env-filter", "fmt", "smallvec", "std", "tracing-log"] }
 
-# CLI
-clap = { version = "4.5.53", features = ["derive"] }
+# CLI (--config, --sender, --max-priority, --api-url, --version, --help)
+clap = { version = "4.6.7", features = ["derive"] }
 
-# Config directory
-dirs = "6.0.0"
+# Default config directory
+dirs = "7.0.0"
+
+[dev-dependencies]
+# The stdio tests check every tool result against the output schema the
+# server advertises, as schema-validating clients do.
+jsonschema = { version = "0.61.0", default-features = false }
+tempfile = "3.27.0"
 
 [profile.release]
 lto = true

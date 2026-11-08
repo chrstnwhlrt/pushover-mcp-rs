@@ -1,2 +1,11 @@
 /target
 .claude
+
+# Nix
+/result
+/.direnv
+/.envrc
+
+# Measurement kit: results and Python caches
+/mcp-tool-test/gemma/work
+/mcp-tool-test/gemma/**/__pycache__

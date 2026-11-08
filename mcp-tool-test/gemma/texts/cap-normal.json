@@ -1,0 +1,33 @@
+{
+ "emulate": {
+  "max_priority": "normal",
+  "refused": "Priority {priority} is switched off for this client (--max-priority {cap}): it would ring through the user's quiet hours. Send it with normal priority at most, and tell the user that alarms are switched off here."
+ },
+ "instructions": "Sends push notifications to the user's own phone and other devices through Pushover; it reaches nobody else. send_notification needs only message; leave out every other parameter the user does not ask for. Without device a notification reaches all of the user's devices, the phone included. Alarms are switched off here: nothing may ring through the user's quiet hours, so normal is the highest priority. For an alarm or anything urgent, send it with normal priority and tell the user that alarms are switched off. low is for no sound and no vibration; silent for no alert at all. For vibration alone use the sound vibrate. A sound the user names that is not among the built-in names of the sound parameter, such as a gong or a sound of their own, is one of the account's own: call list_sounds and take its name. Pushover cannot schedule: every notification goes out at once.",
+ "hide_tools": [
+  "check_emergency_receipt",
+  "cancel_emergency_notification"
+ ],
+ "enum_only": {
+  "send_notification": {
+   "priority": [
+    "silent",
+    "low",
+    "normal"
+   ]
+  }
+ },
+ "tools": {
+  "send_notification": {
+   "description": "Send a push notification to the user's own devices now; it cannot reach other people. Only message is required. Returns the request ID.",
+   "hide": [
+    "retry",
+    "expire",
+    "tags"
+   ],
+   "params": {
+    "priority": "Priority; omit for normal. Notification priority. silent: No alert at all; the message only shows up in the Pushover app.; low: Shown without sound or vibration.; normal: Sound and vibration as set on the device (the default). Quiet hours apply."
+   }
+  }
+ }
+}

@@ -1,0 +1,9 @@
+{
+ "tools": {
+  "send_notification": {
+   "params": {
+    "device": "Only to reach one device and not the others: its name as list_devices gives it (several joined with commas). Device names are the user's own, such as iphone15 or work-mbp, never a word like phone or laptop, nor a person: call list_devices first. Omit to reach all devices; a notification \"to my phone\" needs none, \"only to my phone\" names the phone."
+   }
+  }
+ }
+}

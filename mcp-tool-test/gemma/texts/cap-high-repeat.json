@@ -1,0 +1,19 @@
+{
+ "emulate": {
+  "max_priority": "high",
+  "downgrade": "Sent once, with high priority instead of {priority}: alarms that repeat until acknowledged are switched off for this client (--max-priority {cap}). Tell the user that it went out once, with high priority."
+ },
+ "instructions": "Sends push notifications to the user's own phone and other devices through Pushover; it reaches nobody else. send_notification needs only message; leave out every other parameter the user does not ask for. Without device a notification reaches all of the user's devices, the phone included. Priority high is for something important or urgent; emergency only for an alarm the user wants repeated until acknowledged; low for no sound and no vibration; silent for no alert at all. For vibration alone use the sound vibrate. A sound the user names that is not among the built-in names of the sound parameter, such as a gong or a sound of their own, is one of the account's own: call list_sounds and take its name. Pushover cannot schedule: every notification goes out at once.",
+ "hide_tools": [
+  "check_emergency_receipt",
+  "cancel_emergency_notification"
+ ],
+ "tools": {
+  "send_notification": {
+   "description": "Send a push notification to the user's own devices now; it cannot reach other people. Only message is required. Returns the request ID.",
+   "hide": [
+    "tags"
+   ]
+  }
+ }
+}
