@@ -1,0 +1,7 @@
+{
+ "tools": {
+  "send_notification": {
+   "description": "Send a push notification or alarm to the user's own devices now; it cannot reach other people. message and sender are required. Returns the request ID."
+  }
+ }
+}

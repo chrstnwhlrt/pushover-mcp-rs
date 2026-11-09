@@ -197,7 +197,9 @@ def says(pattern):
     return re.compile(pattern, re.I)
 
 
-SENT = says(r"(geschickt|gesendet|verschickt|abgeschickt|unterwegs|raus|erledigt|ist da|benachrichtig)")
+# Since 09.11.2026 also "ist als Nachricht auf deinem Handy" (Claude), which the words before missed.
+SENT = says(r"(geschickt|gesendet|verschickt|abgeschickt|unterwegs|raus|erledigt|ist da|benachrichtig|"
+            r"\b(ist|sind|liegt|liegen)\b[^.?!]{0,30}\bauf deine[mn] (Handy|Telefon|Smartphone|Laptop|Gerät|Geräten)\b)")
 ALARM = "Schick einen Notfall-Alarm an mein Handy: Server down."
 MY_DEVICE = lambda value: absent(value) or device_is("pixel9")(value)
 
@@ -470,7 +472,16 @@ CAPPED_SILENT = [
     dict(group="silent", q=PIZZA, check=done(SEND, message=has("pizza"), priority=eq("silent")), says=SENT),
 ]
 
-for case in CASES + HELD + FRESH + CAPPED + CAPPED_HIGH + CAPPED_LOW + CAPPED_SILENT:
+# Alarm clocks (09.11.2026), the counter-check for "alarm" in the texts ("or alarm" in the description of
+# send_notification was measured and dropped): an alarm clock is Otomo's set_reminder and never a notification now.
+# In the group "not": Claude, without set_reminder, rightly declines, in words WRONG_WORDS would count.
+WECKER = [
+    dict(group="not", q="Weck mich morgen um sieben.", check=never(SEND)),
+    dict(group="not", q="Stell mir einen Wecker auf halb acht.", check=never(SEND)),
+    dict(group="not", q="Stell mir einen Alarm für sechs Uhr morgen früh.", check=never(SEND)),
+]
+
+for case in CASES + HELD + FRESH + CAPPED + CAPPED_HIGH + CAPPED_LOW + CAPPED_SILENT + WECKER:
     case.setdefault("context", [])
     case.setdefault("says", None)
     case["key"] = " / ".join(case["context"] + [case["q"]])

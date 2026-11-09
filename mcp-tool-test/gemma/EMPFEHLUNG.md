@@ -112,6 +112,35 @@ Binary lhgqrbba (2.0.0 bis auf die note für low und silent, die textproxy.py do
 
 Ohne Angabe sind es drei Läufe. Die übrigen Fehler sind die bekannte Grenze von oben: "Schick meiner Frau ..." und "Schick meinem Bruder ..." gingen an die eigenen Geräte des Nutzers.
 
+## Nachmessung von 2.0.0 (Nacht zum 10.11.2026)
+
+Gemessen wurde das installierte Binary 2.0.0 ohne Nachbildung, Gemma mit `--sender Otomo` und Claude ohne `--sender`. Ohne Angabe sind es drei Läufe.
+
+| Set | Grenze | Gemma | Claude |
+|---|---|---|---|
+| Katalog, 32 Bitten | emergency | 95/96 | 26/26 |
+| zurückgehaltene, 13 Bitten | emergency | 39/39 | 10/11 |
+| neue, 6 Bitten, 2 Läufe | emergency | 11/12 | 4/4 |
+| `CAPPED`, 9 Bitten | normal (Default) | 24/27 | 8/8 |
+| `WECKER`, 3 Bitten, 4 Läufe | normal (Default) | 12/12 | 3/3 |
+
+Claudes Katalog stand zuerst bei 25/26, weil die SENT-Prüfung die Antwort "Die Nummer vom Klempner (040 1234567) ist als Nachricht auf deinem Handy." nicht als Erfolgsmeldung erkannte. Seit cases.py sie erkennt, sind es neu bewertet 26/26.
+
+In `CAPPED` nahm Gemma dreimal Otomos agent_watch und sagte "ich behalte das im Auge", alle drei in derselben Messung: einmal bei "Alarm, der klingelt, bis ich ihn bestätige" und zweimal bei "Notfall-Alarm, der alle fünf Minuten wiederholt wird". Systemprompt und Werkzeugliste waren Byte für Byte dieselben wie bei den 27/27 der Endmessung. Getestet wurde daraufhin "or alarm" in der Beschreibung von send_notification ("Send a push notification or alarm to the user's own devices now; ..."), mit `texts/alarm-cap.json` und `texts/alarm-full.json`, für Claude mit `alarm-cap-claude.json` und `alarm-full-claude.json`. Die Wecker-Bitten sind die Gegenprobe, weil "alarm" im Englischen auch Wecker heißt.
+
+| Messung | 2.0.0 | "or alarm" |
+|---|---|---|
+| die zwei Alarm-Bitten unter normal, 12 Läufe | 24/24 | 24/24 |
+| dieselben, alle Läufe der Nacht | 33/36 | 30/30 |
+| `WECKER`, 4 Läufe | 12/12 | 12/12 |
+| `CAPPED` | 24/27 | 27/27 |
+| Katalog unter emergency | 95/96 | 63/64 (2 Läufe) |
+| Claude, alle Sets ohne Folgefragen | 51/52 | 52/52 |
+
+Der Unterschied ist von Streuung nicht zu trennen, die Fassung ist deshalb verworfen und 2.0.0 bleibt. Bei "Hör auf, mich mit dem Alarm zu nerven" gab Gemma einmal den Nachrichtentext als tag an cancel_emergency_notification, statt die Quittung zu nehmen oder nichts anzugeben. Das war der eine Fehler im Katalog, mit 2.0.0 stand dieser Fall bei 3/3.
+
+Bei "Schick an meinen Laptop ..." nannte Gemma einmal von drei nur die Gerätenamen, ohne Rückfrage und ohne neuen Versuch. "Schick meinem Bruder ..." ging einmal von zwei an die eigenen Geräte, das ist die bekannte Grenze von oben. Claude schrieb einmal "Weltraum-Alarm" in die Nachricht, statt den Ton spacealarm zu nehmen, der Lauf danach hatte 11/11. Für diese Fälle fand sich kein Satz im Werkzeugtext, der nicht auf den einzelnen Fall zugeschnitten wäre.
+
 ## Was nicht in den Server gehört
 
 "Erinnere mich in einer Stunde", "in zwei Stunden" und "Sag mir Bescheid, wenn ..." landen richtig bei Otomos eigenen Werkzeugen (set_reminder, agent_watch). In keinem Lauf wurde ttl oder timestamp dafür missbraucht. Die Instructions sagen trotzdem, dass Pushover nicht planen kann.

@@ -195,7 +195,7 @@ def delivered(tag, calls):
 def pools(catalogue):
     return {"cases": catalogue.CASES, "held": catalogue.HELD, "fresh": catalogue.FRESH, "capped": catalogue.CAPPED,
             "capped-high": catalogue.CAPPED_HIGH, "capped-low": catalogue.CAPPED_LOW,
-            "capped-silent": catalogue.CAPPED_SILENT}
+            "capped-silent": catalogue.CAPPED_SILENT, "wecker": catalogue.WECKER}
 
 
 def score(tag, only="", match_api=True):
@@ -204,8 +204,8 @@ def score(tag, only="", match_api=True):
     # set decides, as run.py and claude_check.py wrote it; the catalogue's for runs without one.
     pool = WORK / f"{tag}.pool"
     by_key = {}
-    for case in (catalogue.CAPPED_SILENT + catalogue.CAPPED_LOW + catalogue.CAPPED_HIGH + catalogue.CAPPED
-                 + catalogue.FRESH + catalogue.HELD + catalogue.CASES):
+    for case in (catalogue.WECKER + catalogue.CAPPED_SILENT + catalogue.CAPPED_LOW + catalogue.CAPPED_HIGH
+                 + catalogue.CAPPED + catalogue.FRESH + catalogue.HELD + catalogue.CASES):
         by_key[case["key"]] = case
     for case in pools(catalogue)[pool.read_text().strip()] if pool.exists() else []:
         by_key[case["key"]] = case
@@ -273,7 +273,8 @@ def main():
     p.add_argument("--held", action="store_true", help="ask the held-out requests instead of the catalogue")
     p.add_argument("--fresh", action="store_true", help="ask the requests made for the last check alone")
     p.add_argument("--capped", action="store_true", help="ask the requests for a server with --max-priority normal")
-    p.add_argument("--set", choices=["cases", "held", "fresh", "capped", "capped-high", "capped-low", "capped-silent"],
+    p.add_argument("--set", choices=["cases", "held", "fresh", "capped", "capped-high", "capped-low", "capped-silent",
+                                     "wecker"],
                    help="the set of requests to ask, by name (capped-high, -low and -silent are for a server with "
                         "that --max-priority, which --server-arg gives it)")
     p.add_argument("--claude", action="store_true", help="judge with Claude's rule for the sender (claude_check.py)")
