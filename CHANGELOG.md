@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.1 (2026-11-10)
+
+### Changed
+
+- Dependencies updated within their versions: itoa 1.0.19 and uuid 1.29.2
+  in the binary, syn 3.0.10 for the derive macros, jsonschema 0.61.1 for
+  the tests. Every direct dependency was already on its newest version, and
+  none has a newer major version. The flake builds with Rust 1.99.1.
+- No change in behavior: `initialize`, `server/discover`, `tools/list` and
+  the tool results are byte for byte those of 2.0.0 apart from the version,
+  checked under every `--max-priority` with and without `--sender` for every
+  call the measurement kit recorded.
+
 ## 2.0.0 (2026-11-09)
 
 ### Changed
