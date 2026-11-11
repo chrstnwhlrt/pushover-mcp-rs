@@ -6,6 +6,7 @@
 /.direnv
 /.envrc
 
-# Measurement kit: results and Python caches
+# Measurement kit and byte comparison: results and Python caches
 /mcp-tool-test/gemma/work
-/mcp-tool-test/gemma/**/__pycache__
+/mcp-tool-test/compare/work
+/mcp-tool-test/**/__pycache__

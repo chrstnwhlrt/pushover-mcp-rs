@@ -429,6 +429,20 @@ The tests in `tests/stdio.rs` run the binary over stdio against a fake Pushover 
 
 `mcp-tool-test/gemma` measures whether Gemma 4 E4B, behind the voice assistant otomo, calls the tools right and tells the user what really went out. The real server answers, against a stand-in of the Pushover API, so nothing reaches a phone. The measurement needs a checkout of otomo with its release build, Ollama with Gemma 4 E4B and a built pushover-mcp-rs; `captest.py`, which checks the priority limits without a model, needs only the binary. The README there (in German) has the details.
 
+### Comparing a build with the installed release
+
+`mcp-tool-test/compare` shows whether a build answers byte for byte like the installed release. `record` runs a binary against the measurement's stand-in of the Pushover API with a fixed clock: `initialize` for every protocol version, `tools/list`, `server/discover`, the tool calls in `calls.jsonl` (what Gemma sent during the measurements) and ten further requests (faulty tool calls, `ping`, other MCP methods and an unknown one), each under every `--max-priority` with and without `--sender`. `diff` compares two recordings. A row that differs only in the version counts as equal, any other difference is shown and fails. A recording takes about five seconds and needs only Python and the binary.
+
+```bash
+nix build
+cd mcp-tool-test/compare
+python3 -I compare.py record "$(command -v pushover-mcp-rs)" work/installed.jsonl
+python3 -I compare.py record ../../result/bin/pushover-mcp-rs work/new.jsonl
+python3 -I compare.py diff work/installed.jsonl work/new.jsonl
+```
+
+`compare.py calls` adds the calls of later measurement runs to `calls.jsonl`; record both sides again after it.
+
 ### Debug Logging
 
 The server logs warnings and its own start and sent notifications on stderr. More detail:
@@ -453,7 +467,7 @@ git push origin main --follow-tags
 nix profile upgrade pushover-mcp-rs
 ```
 
-`set-version.sh` sets the version in `Cargo.toml`, which `flake.nix` reads, and creates commit and tag.
+`set-version.sh` sets the version in `Cargo.toml`, which `flake.nix` reads, and creates commit and tag. Before pushing, compare the new build (`nix build`) with the installed release, see [Comparing a build with the installed release](#comparing-a-build-with-the-installed-release).
 
 ## Project Structure
 
@@ -470,7 +484,8 @@ src/
 tests/
 └── stdio.rs       # The binary over stdio against a fake Pushover API
 mcp-tool-test/
-└── gemma/         # Measurement of the tool texts with Gemma 4 E4B (Python)
+├── gemma/         # Measurement of the tool texts with Gemma 4 E4B (Python)
+└── compare/       # Byte comparison of a build with a release (Python)
 ```
 
 ## Troubleshooting

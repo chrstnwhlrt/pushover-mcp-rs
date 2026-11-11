@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `mcp-tool-test/compare`, the byte comparison behind the releases since
+  2.0.1, now in the repository. `record` runs a binary against the fake API
+  with a fixed clock: `initialize` for every protocol version,
+  `tools/list`, `server/discover`, the 106 tool calls Gemma sent in the
+  measurements (`calls.jsonl`) and ten further requests (faulty tool
+  calls, `ping`, other MCP methods and an unknown one), each under every
+  `--max-priority` with and without `--sender`. `diff` shows every row in
+  which two recordings differ other than in the version.
+
 ## 2.1.0 (2026-11-11)
 
 ### Added

@@ -1,0 +1,106 @@
+{"name": "send_notification", "arguments": {"device": "Laptop", "message": "Das Rendering ist fertig."}}
+{"name": "send_notification", "arguments": {"device": "Laptop", "message": "Der Download ist fertig."}}
+{"name": "send_notification", "arguments": {"device": "pixel9", "message": "Der Akku ist fast leer.", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"device": "pixel9", "message": "Der Akku ist fast leer."}}
+{"name": "send_notification", "arguments": {"device": "thinkpad", "message": "Das Rendering ist fertig.", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"device": "thinkpad", "message": "Das Rendering ist fertig."}}
+{"name": "send_notification", "arguments": {"device": "thinkpad", "message": "Der Download ist fertig."}}
+{"name": "send_notification", "arguments": {"expire": 3600, "message": "Die Haustür steht offen.", "priority": "emergency", "retry": 300, "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"expire": 3600, "message": "Die Haustür steht offen.", "priority": "emergency", "retry": 300, "sound": "siren"}}
+{"name": "send_notification", "arguments": {"expire": 3600, "message": "Die Haustür steht offen.", "priority": "emergency", "retry": 300}}
+{"name": "send_notification", "arguments": {"message": "040 1234567"}}
+{"name": "send_notification", "arguments": {"message": "Aktueller Status", "url": "https://example.com/status", "url_title": "Status"}}
+{"name": "send_notification", "arguments": {"message": "Besuch ist da", "sender": "Claude (garden planner)", "sound": "alien"}}
+{"name": "send_notification", "arguments": {"message": "Besuch ist da.", "sender": "Claude (garden planner)", "sound": "alien"}}
+{"name": "send_notification", "arguments": {"message": "Besuch ist da.", "sound": "alien", "title": "Besuch"}}
+{"name": "send_notification", "arguments": {"message": "Besuch ist da.", "sound": "alien"}}
+{"name": "send_notification", "arguments": {"message": "Bin in der Garage", "ttl": 600}}
+{"name": "send_notification", "arguments": {"message": "Bin in der Garage.", "sender": "Claude (garden planner)", "ttl": 600}}
+{"name": "send_notification", "arguments": {"message": "Bin in der Garage.", "ttl": 600}}
+{"name": "send_notification", "arguments": {"message": "Build 4711 erfolgreich.", "monospace": true, "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Build 4711 erfolgreich.", "monospace": true}}
+{"name": "send_notification", "arguments": {"message": "Das Backup ist fertig.", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Das Backup ist fertig."}}
+{"name": "send_notification", "arguments": {"message": "Das Essen ist fertig.", "sender": "Claude (garden planner)", "sound": "kuechengong"}}
+{"name": "send_notification", "arguments": {"message": "Das Essen ist fertig.", "sound": "Küchengong"}}
+{"name": "send_notification", "arguments": {"message": "Das Essen ist fertig.", "sound": "kuechengong"}}
+{"name": "send_notification", "arguments": {"message": "Das Paket ist angekommen.", "priority": "low", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Das Paket ist angekommen.", "priority": "silent"}}
+{"name": "send_notification", "arguments": {"message": "Das Paket ist da.", "sender": "Claude (garden planner)", "sound": "bike"}}
+{"name": "send_notification", "arguments": {"message": "Das Paket ist da.", "sound": "bike"}}
+{"name": "send_notification", "arguments": {"message": "Das Parkticket läuft ab.", "sender": "Claude (garden planner)", "ttl": 3600}}
+{"name": "send_notification", "arguments": {"message": "Das Parkticket läuft ab.", "ttl": 3600}}
+{"name": "send_notification", "arguments": {"message": "Der Download ist fertig."}}
+{"name": "send_notification", "arguments": {"message": "Der Drucker ist fertig.", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Der Drucker ist fertig."}}
+{"name": "send_notification", "arguments": {"message": "Der Kuchen ist fertig.", "sender": "Claude (garden planner)", "sound": "siren"}}
+{"name": "send_notification", "arguments": {"message": "Der Kuchen ist fertig.", "sound": "siren"}}
+{"name": "send_notification", "arguments": {"message": "Der Router ist offline.", "priority": "high", "sender": "Claude (garden planner)", "title": "Router offline"}}
+{"name": "send_notification", "arguments": {"message": "Der Router ist offline.", "priority": "high", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Der Router ist offline.", "priority": "high"}}
+{"name": "send_notification", "arguments": {"message": "Der aktuelle Status ist verfügbar.", "url": "https://example.com/status", "url_title": "Status"}}
+{"name": "send_notification", "arguments": {"message": "Die Adresse ist Hauptstraße 5.", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Die Adresse ist Hauptstraße 5."}}
+{"name": "send_notification", "arguments": {"message": "Die Heizung ist ausgefallen.", "priority": "high", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Die Heizung ist ausgefallen.", "priority": "high"}}
+{"name": "send_notification", "arguments": {"message": "Die Pizza ist bestellt.", "priority": "silent", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Die Pizza ist bestellt.", "priority": "silent"}}
+{"name": "send_notification", "arguments": {"message": "Die Rakete steht bereit.", "priority": "high", "sound": "spacealarm"}}
+{"name": "send_notification", "arguments": {"message": "Die Rakete steht bereit.", "sender": "Claude (garden planner)", "sound": "spacealarm"}}
+{"name": "send_notification", "arguments": {"message": "Die Rakete steht bereit.", "sound": "spacealarm"}}
+{"name": "send_notification", "arguments": {"message": "Die Spülmaschine ist fertig."}}
+{"name": "send_notification", "arguments": {"message": "Die Telefonnummer des Klempners ist 040 1234567."}}
+{"name": "send_notification", "arguments": {"message": "Die Telefonnummer des Klempners ist: 040 1234567."}}
+{"name": "send_notification", "arguments": {"message": "Eine neue Folge ist online.", "priority": "low", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Eine neue Folge ist online.", "priority": "low"}}
+{"name": "send_notification", "arguments": {"message": "Gasgeruch in der Küche", "priority": "emergency"}}
+{"name": "send_notification", "arguments": {"message": "Gasgeruch in der Küche. Bitte sofort lüften und Fenster öffnen!", "priority": "emergency", "title": "Notfallalarm: Gasgeruch"}}
+{"name": "send_notification", "arguments": {"message": "Gasgeruch in der Küche.", "priority": "emergency"}}
+{"name": "send_notification", "arguments": {"message": "Hier ist der Link zum Status.", "sender": "Claude (garden planner)", "url": "https://example.com/status", "url_title": "Status"}}
+{"name": "send_notification", "arguments": {"message": "Hier ist der Link zur Rechnung: https://example.com/rechnung"}}
+{"name": "send_notification", "arguments": {"message": "Ich bin unterwegs."}}
+{"name": "send_notification", "arguments": {"message": "Ich komme später."}}
+{"name": "send_notification", "arguments": {"message": "Ich sitze im Meeting.", "priority": "low", "sound": "vibrate"}}
+{"name": "send_notification", "arguments": {"message": "Ich sitze im Meeting.", "sender": "Claude (garden planner)", "sound": "vibrate"}}
+{"name": "send_notification", "arguments": {"message": "Ich sitze im Meeting.", "sound": "vibrate"}}
+{"name": "send_notification", "arguments": {"message": "Klempner: 040 1234567", "sender": "Claude (garden planner)", "title": "Telefonnummer Klempner"}}
+{"name": "send_notification", "arguments": {"message": "Klempner: 040 1234567", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Link zur Rechnung", "sender": "Claude (garden planner)", "url": "https://example.com/rechnung", "url_title": "Rechnung"}}
+{"name": "send_notification", "arguments": {"message": "Milch, Eier und Brot", "sender": "Claude (garden planner)", "title": "Einkauf"}}
+{"name": "send_notification", "arguments": {"message": "Milch, Eier und Brot", "title": "Einkauf"}}
+{"name": "send_notification", "arguments": {"message": "Notfall-Alarm: Rauchmelder im Flur", "priority": "emergency"}}
+{"name": "send_notification", "arguments": {"message": "Rauchmelder im Flur hat ausgelöst! Bitte sofort prüfen.", "priority": "emergency", "sender": "Claude (garden planner)", "title": "Notfall: Rauchmelder Flur"}}
+{"name": "send_notification", "arguments": {"message": "Rauchmelder im Flur hat ausgelöst!", "priority": "emergency", "sender": "Claude (garden planner)", "title": "NOTFALL: Rauchmelder"}}
+{"name": "send_notification", "arguments": {"message": "Rauchmelder im Flur hat ausgelöst!", "priority": "emergency", "sender": "Claude (garden planner)", "title": "Notfall: Rauchmelder"}}
+{"name": "send_notification", "arguments": {"message": "Rauchmelder im Flur", "priority": "emergency", "title": "Notfall"}}
+{"name": "send_notification", "arguments": {"message": "Rauchmelder im Flur", "priority": "emergency", "title": "Notfall-Alarm"}}
+{"name": "send_notification", "arguments": {"message": "Rauchmelder im Flur", "priority": "emergency", "title": "Notfallalarm"}}
+{"name": "send_notification", "arguments": {"message": "Rauchmelder im Flur", "priority": "emergency"}}
+{"name": "send_notification", "arguments": {"message": "Rechnung bezahlt", "sender": "Claude (garden planner)", "sound": "cashregister"}}
+{"name": "send_notification", "arguments": {"message": "Rechnung bezahlt", "sound": "cashregister"}}
+{"name": "send_notification", "arguments": {"message": "Rechnung bezahlt.", "sound": "cashregister"}}
+{"name": "send_notification", "arguments": {"message": "Server down", "priority": "emergency", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Server down", "priority": "emergency"}}
+{"name": "send_notification", "arguments": {"message": "Server down.", "priority": "emergency"}}
+{"name": "send_notification", "arguments": {"message": "Status", "url": "https://example.com/status", "url_title": "Status"}}
+{"name": "send_notification", "arguments": {"message": "Status-Update", "url": "https://example.com/status", "url_title": "Status"}}
+{"name": "send_notification", "arguments": {"message": "Wasser im Keller!", "priority": "emergency", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Wasser im Keller", "priority": "emergency", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Wasser im Keller", "priority": "emergency", "sound": "siren"}}
+{"name": "send_notification", "arguments": {"message": "Wasser im Keller", "priority": "emergency", "title": "Notfall"}}
+{"name": "send_notification", "arguments": {"message": "Wasser im Keller", "priority": "emergency"}}
+{"name": "send_notification", "arguments": {"message": "Weltraum-Alarm: Die Rakete steht bereit.", "sender": "Claude (garden planner)"}}
+{"name": "send_notification", "arguments": {"message": "Zahlung eingegangen", "sender": "Claude (garden planner)", "sound": "cashregister"}}
+{"name": "send_notification", "arguments": {"message": "Zahlung eingegangen.", "sound": "Registrierkasse"}}
+{"name": "send_notification", "arguments": {"message": "Zahlung eingegangen.", "sound": "cashregister"}}
+{"name": "send_notification", "arguments": {"message": "https://example.com/rechnung", "sender": "Claude (garden planner)", "title": "Link: Rechnung", "url": "https://example.com/rechnung"}}
+{"name": "send_notification", "arguments": {"message": "https://example.com/rechnung", "title": "Rechnung"}}
+{"name": "send_notification", "arguments": {"message": "https://example.com/rechnung"}}
+{"name": "list_devices", "arguments": {}}
+{"name": "list_sounds", "arguments": {}}
+{"name": "get_message_limits", "arguments": {}}
+{"name": "check_emergency_receipt", "arguments": {"receipt": null}}
+{"name": "check_emergency_receipt", "arguments": {}}
+{"name": "cancel_emergency_notification", "arguments": {"tag": "Wasser im Keller"}}
+{"name": "cancel_emergency_notification", "arguments": {"tag": ["Wasser im Keller"]}}
+{"name": "cancel_emergency_notification", "arguments": {}}
