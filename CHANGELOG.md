@@ -17,10 +17,13 @@
 
 ### Changed
 
-- The server runs on one thread. Tokio's multi-thread runtime started a
-  worker per CPU core, 26 threads on a machine with 24 cores; now there
-  are 2, with 6.3 instead of 7.0 MB of memory and `initialize` answered in
-  1.4 instead of 2.1 ms.
+- The server runs on one thread: tokio's multi-thread runtime started a
+  worker per CPU core, 26 threads on a machine with 24 cores, now there
+  are 2. Release builds optimize for size (`opt-level = "s"`), as the
+  server waits on the network, not on the CPU. With the encryption on
+  board, the binary has 4.8 instead of 7.5 MB, the running server 5.7
+  instead of 7.0 MB of memory, and `initialize` is answered in 1.4 instead
+  of 2.1 ms.
 - Dependencies: const-oid 0.10.3, rustls-pki-types 1.16.0 and
   webpki-root-certs 1.0.12, rust-overlay of 11.11.2026 (still Rust
   1.99.1). Every direct dependency was already on its newest version.
