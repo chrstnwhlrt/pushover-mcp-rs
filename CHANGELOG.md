@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.0.2 (2026-11-11)
+
+### Fixed
+
+- Flattening the input schemas: a `$ref` next to keywords of its own,
+  such as the description of a field, had them replaced by the
+  definition's; now they stay and the definition's description follows.
+  Only text constants become a string `enum`. No schema of this server
+  has either case, so `tools/list` is byte for byte that of 2.0.1.
+- `set-version.sh` showed nothing when the release build failed.
+- Measurement kit: the check of the answer to "Wann wird mein
+  Pushover-Kontingent zurückgesetzt?" looked for December and failed in
+  every other month; it now takes the month `get_message_limits`
+  returned. Its README names the limit each set needs: without
+  `--max-priority emergency` the server lowers the catalogue's alarms.
+
 ## 2.0.1 (2026-11-10)
 
 ### Changed
