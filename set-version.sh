@@ -65,9 +65,9 @@ echo ""
 info "Updating Cargo.toml..."
 sed -i "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
 
-# Update Cargo.lock by building
+# Update Cargo.lock by building; errors and warnings stay visible
 info "Updating Cargo.lock..."
-cargo build --release > /dev/null 2>&1
+cargo build --release --quiet
 
 # Show the diff
 echo ""

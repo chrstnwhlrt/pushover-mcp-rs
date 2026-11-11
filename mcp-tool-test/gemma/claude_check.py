@@ -9,7 +9,8 @@ directory, setting sources cut to local). The calls and the answer are
 scored as run.py scores Gemma's, with Claude's rule for the sender: it
 names Claude and the session.
 
-    claude_check.py TAG [--texts FILE] [--held | --capped | --set NAME] [--server-arg ARG ...] [--jobs 4] [--model M] [--only REGEX]
+    claude_check.py TAG [--texts FILE] [--held | --capped | --set NAME] [--binary PATH] [--server-arg ARG ...]
+                        [--jobs 4] [--model M] [--only REGEX]
 
 Writes work/TAG.jsonl, TAG.calls.jsonl and the score as run.py --judge does.
 """

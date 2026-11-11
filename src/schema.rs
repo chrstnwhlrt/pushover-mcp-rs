@@ -4,7 +4,7 @@
 //! to `$defs` with `$ref`, or lists enum values as `oneOf` constants, loses
 //! parts on the way to the model, which then sent `"priority": 1`. The
 //! transformation here is the one that was measured: every local `$ref`
-//! resolved, a `oneOf` of constants as a plain `enum` whose values the
+//! resolved, a `oneOf` of text constants as a plain `enum` whose values the
 //! description names, and an `anyOf` of one type and `null` as that type.
 
 use rmcp::model::JsonObject;
@@ -49,8 +49,16 @@ fn resolve(node: Value, definitions: &Map<String, Value>) -> Value {
     if let Some(Value::String(reference)) = node.remove("$ref") {
         let name = reference.rsplit('/').next().unwrap_or_default();
         if let Some(Value::Object(definition)) = definitions.get(name) {
+            // The node's own keywords stay, such as the description of a
+            // field; the definition's description follows it.
+            let own = node.remove("description");
             for (key, value) in definition {
-                node.insert(key.clone(), value.clone());
+                node.entry(key.clone()).or_insert_with(|| value.clone());
+            }
+            if let Some(own) = own
+                && let Some(Value::String(referenced)) = node.insert("description".into(), own)
+            {
+                join_description(&mut node, &referenced);
             }
         }
     }
@@ -60,9 +68,12 @@ fn resolve(node: Value, definitions: &Map<String, Value>) -> Value {
         .map(|(key, value)| (key, resolve(value, definitions)))
         .collect();
 
+    // Only text constants: the enum is typed as string.
     let constants = match node.get("oneOf") {
         Some(Value::Array(options))
-            if options.iter().all(|option| option.get("const").is_some()) =>
+            if options
+                .iter()
+                .all(|option| option.get("const").is_some_and(Value::is_string)) =>
         {
             Some(options.clone())
         }
@@ -190,12 +201,44 @@ mod tests {
     }
 
     #[test]
+    fn a_reference_keeps_the_fields_own_description() {
+        let schema = object(json!({
+            "$defs": {"Priority": {
+                "description": "Notification priority.",
+                "oneOf": [
+                    {"const": "low", "description": "Quiet.", "type": "string"},
+                    {"const": "high", "description": "Loud.", "type": "string"},
+                ],
+            }},
+            "type": "object",
+            "properties": {
+                "priority": {"$ref": "#/$defs/Priority", "description": "Priority of this call."},
+            },
+        }));
+        assert_eq!(
+            Value::Object(flatten(&schema)),
+            json!({
+                "type": "object",
+                "properties": {
+                    "priority": {
+                        "type": "string",
+                        "enum": ["low", "high"],
+                        "description": "Priority of this call. Notification priority. \
+                                        low: Quiet.; high: Loud.",
+                    },
+                },
+            })
+        );
+    }
+
+    #[test]
     fn other_schemas_stay_as_they_are() {
         let schema = object(json!({
             "type": "object",
             "properties": {
                 "title": {"type": ["string", "null"], "maxLength": 250},
                 "either": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+                "level": {"oneOf": [{"const": 1}, {"const": 2}]},
             },
         }));
         assert_eq!(flatten(&schema), schema);

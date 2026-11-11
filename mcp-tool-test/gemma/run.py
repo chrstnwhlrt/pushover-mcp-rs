@@ -8,8 +8,8 @@ puts the texts of a variant in place (--texts) and keeps every call.
 proxy.py in front of Ollama keeps every model call with its reasoning, for
 why.py.
 
-    run.py TAG [--runs N] [--only REGEX] [--texts FILE] [--set NAME]
-    run.py TAG --judge        score the answers of TAG again
+    run.py TAG [--runs N] [--only REGEX] [--texts FILE] [--set NAME] [--binary PATH] [--server-arg ARG ...]
+    run.py TAG --judge [--claude]   score the answers of TAG again (--claude: those of claude_check.py)
 
 The checkout of Otomo, with a release build of otomo-probe and its
 config.toml, is OTOMO_DIR (default: otomo next to this repository); the

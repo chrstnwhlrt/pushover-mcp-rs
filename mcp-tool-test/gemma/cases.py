@@ -30,12 +30,6 @@ def absent_or(*values):
     return lambda value: absent(value) or value in values
 
 
-# The sounds of the fake API by name, with their display names: the server takes a display name, in any case,
-# for its name (09.11.2026), and a device name in any case.
-DISPLAY = {"kuechengong": "Küchengong", "cashregister": "Cash Register", "spacealarm": "Space Alarm", "bike": "Bike",
-           "siren": "Siren", "vibrate": "Vibrate Only", "none": "None (silent)", "alien": "Alien Alarm (long)"}
-
-
 def sound_is(*names):
     """One of `names`, as it reached the API (the server takes a display name for its name, where it does)."""
     return lambda value: value in names
@@ -119,12 +113,14 @@ def done(tool, **conds):
 
 
 def both(*checks):
-    def check(calls, context):
+    """Right where all of `checks` are; a check that needs the answer gets it."""
+    def check(calls, context, answer=""):
         for one in checks:
-            ok, why = one(calls, context)
+            ok, why = one(calls, context, answer) if getattr(one, "wants_answer", False) else one(calls, context)
             if not ok:
                 return ok, why
         return True, ""
+    check.wants_answer = True
     return check
 
 
@@ -195,6 +191,26 @@ def on_the_alarm(tool):
 
 def says(pattern):
     return re.compile(pattern, re.I)
+
+
+MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November",
+          "Dezember"]
+
+
+def names_the_reset(calls, context, answer=""):
+    """The answer names the day get_message_limits gave as reset_at, the first of next month in fakeapi.py:
+    "1. Dezember", "ersten Dezember" or "01.12." for a run in November. Until 11.11.2026 the check named December
+    itself and failed in every other month."""
+    reset = next(((c.get("structured") or {}).get("reset_at") for c in calls
+                  if c["name"] == "get_message_limits" and not c["error"]), None)
+    if not reset:
+        return False, "no reset_at"
+    month = int(reset[5:7])
+    named = re.search(rf"(\b0?1\.|\bersten)\s*{MONTHS[month - 1]}|\b0?1\.0?{month}\.", answer, re.I)
+    return (True, "") if named else (False, "answer: " + answer[:90])
+
+
+names_the_reset.wants_answer = True
 
 
 # Since 09.11.2026 also "ist als Nachricht auf deinem Handy" (Claude), which the words before missed.
@@ -273,8 +289,7 @@ CASES = [
     dict(group="limits", q="Wie viele Push-Nachrichten kann ich diesen Monat noch schicken?",
          check=both(done("get_message_limits"), never(SEND)), says=says(r"9[ .]?500|neuntausendfünfhundert")),
     dict(group="limits", q="Wann wird mein Pushover-Kontingent zurückgesetzt?",
-         check=both(done("get_message_limits"), never(SEND)),
-         says=says(r"(1\.|ersten|01\.)\s*Dezember|\b0?1\.12\.")),
+         check=both(done("get_message_limits"), never(SEND), names_the_reset)),
     # Time
     dict(group="time", q="Schick mir eine Push-Nachricht, die nach zehn Minuten wieder verschwindet: Bin in der Garage.",
          check=done(SEND, message=has("garage"), ttl=eq(600))),
