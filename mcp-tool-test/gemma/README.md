@@ -25,7 +25,7 @@ python3 -I captest.py PFAD --sender Otomo
 python3 -I why.py TAG "REGEX"
 ```
 
-`--set` nimmt `cases`, `held`, `fresh`, `capped`, `capped-high`, `capped-low`, `capped-silent` oder `wecker`. Die Sets mit Grenze brauchen den Server mit derselben Grenze, etwa `--server-arg=--max-priority --server-arg=high`. Für Otomo kommt `--server-arg=--sender --server-arg=Otomo` dazu, Claude misst man ohne `--sender`.
+`--set` nimmt `cases`, `held`, `fresh`, `capped`, `capped-high`, `capped-low`, `capped-silent` oder `wecker`. Jedes Set braucht den Server mit seiner Grenze. `cases`, `held` und `fresh` laufen mit `--server-arg=--max-priority --server-arg=emergency`, sonst stuft der Server die Alarme herunter (ein Lauf vom 09.11.2026 kam so auf 72/96). `capped-high`, `capped-low` und `capped-silent` laufen mit der Grenze aus ihrem Namen, etwa `--server-arg=--max-priority --server-arg=high`, `capped` und `wecker` mit dem Default normal. Für Otomo kommt `--server-arg=--sender --server-arg=Otomo` dazu, Claude misst man ohne `--sender`.
 
 Ein Durchgang des Katalogs dauert mit Gemma rund fünf Minuten. Gemessen wird nie parallel auf Ollama, das stört Gemmas Drafter.
 

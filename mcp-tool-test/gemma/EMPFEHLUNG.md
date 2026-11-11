@@ -14,11 +14,11 @@ Gemma 4 E4B in Otomo, die Texte von 1.0.0 (Original) gegen die Empfehlung (nachg
 | Claude Sonnet 5.5, Katalog ohne Folgefragen | 26/26 | 26/26 |
 | Claude Sonnet 5.5, zurückgehaltene Bitten | 11/11 | 11/11 |
 
-Claude nennt in beiden Fällen sich und seine Sitzung als sender, die neuen Texte kosten Claude also nichts. Die Ablation (v4 = 64/64, je eine Änderung weg, je 2 Läufe): ohne Tonprüfung 62, ohne Geräteprüfung 61, mit den alten Instructions 59, ohne flaches Enum 63. Die Regel "letzter Alarm" machte aus 0/8 Folgefragen 8/8.
+Claude nennt in beiden Fällen sich und seine Sitzung als sender, die neuen Texte kosten Claude also nichts. Die Ablation (v4 = 64/64, je eine Änderung weg, je zwei Läufe): ohne Tonprüfung 62, ohne Geräteprüfung 61, mit den alten Instructions 59, ohne flaches Enum 63. Die Regel "letzter Alarm" machte aus 0/8 Folgefragen 8/8.
 
 Bekannte Grenzen, die kein Servertext löst:
 - "Schick meiner Frau eine Push-Nachricht ..." geht in etwa einem von vier Fällen an die eigenen Geräte des Nutzers und Gemma behauptet, die Frau sei informiert. Sonst fragt sie nach einem Gerät für die Frau. Der Satz "cannot reach other people" in der Werkzeugbeschreibung brachte 9/12 gegen 8/12, das ist Rauschen. Das ist ein Thema für Otomos Harness (behauptete Aktionen), der Satz bleibt trotzdem, weil er stimmt.
-- Ein deutscher Tonname ohne passenden Anzeigenamen ("Registrierkasse"): Nach der Ablehnung bietet Gemma "cashregister" an, statt erneut zu senden (1 von 3).
+- Ein deutscher Tonname ohne passenden Anzeigenamen ("Registrierkasse"): Nach der Ablehnung bietet Gemma "cashregister" an, statt erneut zu senden (einmal von drei).
 - Gerätenamen, die die Art des Geräts nicht verraten (thinkpad): Gemma fragt dann zurück und nennt die Geräte. Das ist richtig so.
 - Bitten, die nach "später" oder "wenn" klingen ("Gib mir per Push Bescheid", "Start in zehn Minuten"), nimmt Gemma als Erinnerung oder Beobachtung. Das passiert mit jedem Text und ist meistens auch gemeint.
 
