@@ -17,7 +17,7 @@ When a long task is done or something needs your decision, the assistant sends a
 - **Sounds** - the built-in sounds and the custom sounds of your account (`list_sounds`)
 - **Devices and quota** - target single devices (`list_devices`) and read the monthly message quota (`get_message_limits`)
 - **API etiquette** - at most two concurrent connections and receipt polls at least five seconds apart, as Pushover asks
-- **No secrets in the context** - the token and the user key appear neither in tool results nor in error messages or logs
+- **No secrets in the context** - the token, the user key and the encryption key appear neither in tool results nor in error messages or logs
 - **Live config** - the config file is read on every call, so a token added after the first start works without restarting the client
 - **End-to-end encryption** - with a key in the config, message, title and link leave the machine encrypted, and only Pushover's iOS and Android apps with the same key can read them
 
@@ -75,7 +75,7 @@ pushover-mcp-rs --sender Otomo
 pushover-mcp-rs --max-priority emergency
 ```
 
-`encryption_key` turns on Pushover's end-to-end encryption. The server encrypts `message`, the title (with the sender), `url` and `url_title` with this key before they leave the machine, as Pushover's API documentation describes it (gzip, AES-256-CBC, HMAC-SHA256), so Pushover's servers never see them. Pushover's iOS and Android apps decrypt them from version 5.0 with the same key, which you store in the app on each device; for the desktop and browser clients Pushover documents no end-to-end encryption. Priority, sound, device and an image attachment go out unencrypted. The encrypted values are longer than the text (a title of 17 characters becomes 128 characters), and Pushover does not say whether its length limits count them. A key:
+`encryption_key` turns on Pushover's end-to-end encryption. The server encrypts `message`, the title (with the sender), `url` and `url_title` with this key before they leave the machine, as Pushover's API documentation describes it (gzip, AES-256-CBC, HMAC-SHA256), so Pushover's servers never see them. Pushover's iOS and Android apps decrypt them from version 5.0 with the same key, which you store in the app on each device; for the desktop and browser clients Pushover documents no end-to-end encryption. All other parameters, such as priority, sound and device, and an image attachment go out unencrypted. The encrypted values are longer than the text (a title of 17 characters becomes 128 characters), and Pushover does not say whether its length limits count them. To make a key:
 
 ```bash
 openssl rand -hex 32
