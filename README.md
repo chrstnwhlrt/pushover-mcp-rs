@@ -19,6 +19,7 @@ When a long task is done or something needs your decision, the assistant sends a
 - **API etiquette** - at most two concurrent connections and receipt polls at least five seconds apart, as Pushover asks
 - **No secrets in the context** - the token and the user key appear neither in tool results nor in error messages or logs
 - **Live config** - the config file is read on every call, so a token added after the first start works without restarting the client
+- **End-to-end encryption** - with a key in the config, message, title and link leave the machine encrypted, and only Pushover's iOS and Android apps with the same key can read them
 
 ## Quick Start
 
@@ -44,7 +45,8 @@ The first start writes an empty config file, which only you can read on Linux an
 {
   "token": "your-application-token",
   "default_user_key": "your-user-key",
-  "default_device": null
+  "default_device": null,
+  "encryption_key": null
 }
 ```
 
@@ -53,6 +55,7 @@ The first start writes an empty config file, which only you can read on Linux an
 | `token` | Yes | API token of a Pushover application, from [pushover.net/apps/build](https://pushover.net/apps/build) |
 | `default_user_key` | Yes | Your user key (shown on [pushover.net](https://pushover.net/) after login) or a group key |
 | `default_device` | No | Device, or several joined with commas, for calls that name none |
+| `encryption_key` | No | Key for end-to-end encryption, 64 hexadecimal characters (see below) |
 
 `--config <PATH>` selects another file, for example for a second Pushover account:
 
@@ -70,6 +73,12 @@ pushover-mcp-rs --sender Otomo
 
 ```bash
 pushover-mcp-rs --max-priority emergency
+```
+
+`encryption_key` turns on Pushover's end-to-end encryption. The server encrypts `message`, the title (with the sender), `url` and `url_title` with this key before they leave the machine, as Pushover's API documentation describes it (gzip, AES-256-CBC, HMAC-SHA256), so Pushover's servers never see them. Pushover's iOS and Android apps decrypt them from version 5.0 with the same key, which you store in the app on each device; for the desktop and browser clients Pushover documents no end-to-end encryption. Priority, sound, device and an image attachment go out unencrypted. The encrypted values are longer than the text (a title of 17 characters becomes 128 characters), and Pushover does not say whether its length limits count them. A key:
+
+```bash
+openssl rand -hex 32
 ```
 
 ### 3. Run
@@ -456,6 +465,7 @@ src/
 ├── model.rs       # Tool parameters and results, Pushover API responses
 ├── schema.rs      # Flat input schemas, as small models read them best
 ├── attachment.rs  # Image attachments: size and type checks
+├── encryption.rs  # End-to-end encryption of the message fields
 └── config.rs      # Config file: location, template, loading
 tests/
 └── stdio.rs       # The binary over stdio against a fake Pushover API
@@ -477,6 +487,10 @@ mcp-tool-test/
 ### "Pushover refused the request (HTTP 429 ...)"
 
 - The monthly message quota is used up; `get_message_limits` shows when it resets
+
+### "The encryption_key in ... is not a 256-bit key of 64 hexadecimal characters"
+
+- The key has exactly 64 hexadecimal characters (0-9, a-f), as `openssl rand -hex 32` prints it. Without the line in the config file, notifications go out without end-to-end encryption
 
 ### "Invalid device name" or "Unknown device"
 

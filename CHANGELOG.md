@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.1.0 (2026-11-11)
+
+### Added
+
+- `encryption_key` in the config file turns on Pushover's end-to-end
+  encryption: `message`, the title, `url` and `url_title` leave the
+  machine compressed with gzip, encrypted with AES-256-CBC and
+  authenticated with HMAC-SHA256, as Pushover's API documentation
+  describes it, so Pushover's servers never see them. Its iOS and Android
+  apps decrypt them from version 5.0 with the same key. The cryptography
+  comes from aws-lc-rs, which rustls brings for TLS anyway; flate2 is new
+  for gzip. Checked against openssl, the tools of Pushover's own example.
+  Without the key nothing changes, and the texts the model reads stay
+  byte for byte those of 2.0.2.
+
+### Changed
+
+- The server runs on one thread. Tokio's multi-thread runtime started a
+  worker per CPU core, 26 threads on a machine with 24 cores; now there
+  are 2, with 6.3 instead of 7.0 MB of memory and `initialize` answered in
+  1.4 instead of 2.1 ms.
+- Dependencies: const-oid 0.10.3, rustls-pki-types 1.16.0 and
+  webpki-root-certs 1.0.12, rust-overlay of 11.11.2026 (still Rust
+  1.99.1). Every direct dependency was already on its newest version.
+
 ## 2.0.2 (2026-11-11)
 
 ### Fixed

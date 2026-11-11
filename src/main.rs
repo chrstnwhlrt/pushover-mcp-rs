@@ -4,6 +4,7 @@
 
 mod attachment;
 mod config;
+mod encryption;
 mod model;
 mod pushover;
 mod schema;
@@ -51,7 +52,10 @@ fn priority_level(level: &str) -> Result<model::Priority, String> {
         .ok_or_else(|| "expected silent, low, normal, high or emergency (or -2 to 2)".to_owned())
 }
 
-#[tokio::main]
+// One thread is enough for a stdio server that waits on the API now and
+// then; the multi-thread runtime started a worker per CPU core. Attachments
+// are read on tokio's blocking pool.
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
@@ -91,13 +95,22 @@ async fn main() -> Result<()> {
     } else {
         // Tools read the file on every call; this only reports problems early.
         match config::load(&config_path) {
-            Ok(config) if config.token.is_empty() || config.default_user_key.is_none() => {
-                tracing::warn!(
-                    "The Pushover token or user key is missing in {}",
-                    config_path.display()
-                );
+            Ok(config) => {
+                if config.token.is_empty() || config.default_user_key.is_none() {
+                    tracing::warn!(
+                        "The Pushover token or user key is missing in {}",
+                        config_path.display()
+                    );
+                }
+                if let Some(key) = &config.encryption_key
+                    && encryption::Key::from_hex(key).is_none()
+                {
+                    tracing::warn!(
+                        "The encryption_key in {} is not 64 hexadecimal characters",
+                        config_path.display()
+                    );
+                }
             }
-            Ok(_) => {}
             Err(e) => tracing::warn!("{e:#}"),
         }
     }

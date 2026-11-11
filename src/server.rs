@@ -24,6 +24,7 @@ use rmcp::{
 use crate::{
     attachment,
     config::{self, Config, trim_to_option},
+    encryption::Key,
     model::{
         CancelEmergencyParams, CancelEmergencyResult, CheckReceiptParams, CheckReceiptResult,
         DEFAULT_EXPIRE_SECONDS, DEFAULT_RETRY_SECONDS, ListDevicesResult, ListSoundsResult,
@@ -219,6 +220,7 @@ impl PushoverServer {
         let notification = build_notification(params, config.default_device.clone())?;
         let token = self.token(&config)?;
         let user = self.user_key(&config)?;
+        let encryption = self.encryption_key(&config)?;
         let image = match notification.attachment {
             Some(path) => Some(attachment::load_image(path).await?),
             None => None,
@@ -229,6 +231,9 @@ impl PushoverServer {
         }
         if let Some(devices) = &notification.devices {
             fields.push(("device", self.checked_devices(token, user, devices).await?));
+        }
+        if let Some(key) = &encryption {
+            key.encrypt_fields(&mut fields)?;
         }
 
         let response = self.api.send_message(token, user, fields, image).await?;
@@ -376,6 +381,24 @@ impl PushoverServer {
                 self.config_path.display()
             )
         })
+    }
+
+    /// The key for end-to-end encryption, if the config file has one.
+    fn encryption_key(&self, config: &Config) -> Result<Option<Key>, String> {
+        config
+            .encryption_key
+            .as_deref()
+            .map(|hex| {
+                Key::from_hex(hex).ok_or_else(|| {
+                    format!(
+                        "The encryption_key in {} is not a 256-bit key of 64 hexadecimal \
+                         characters. The user has to correct it there, or remove it to send \
+                         without end-to-end encryption.",
+                        self.config_path.display()
+                    )
+                })
+            })
+            .transpose()
     }
 
     fn latest_receipt(&self) -> Option<String> {

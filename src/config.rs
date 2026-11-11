@@ -23,6 +23,10 @@ pub struct Config {
     /// Device (or comma-separated devices) used when a call names none
     #[serde(default)]
     pub default_device: Option<String>,
+    /// Key for end-to-end encryption of the notifications, 64 hexadecimal
+    /// characters (optional)
+    #[serde(default)]
+    pub encryption_key: Option<String>,
 }
 
 /// `<config dir>/pushover-mcp-rs/config.json`, the config dir being
@@ -87,6 +91,7 @@ impl Config {
         }
         self.default_user_key = trim_to_option(self.default_user_key.take());
         self.default_device = trim_to_option(self.default_device.take());
+        self.encryption_key = trim_to_option(self.encryption_key.take());
     }
 }
 
@@ -125,7 +130,8 @@ mod tests {
         let path = dir.path().join("config.json");
         std::fs::write(
             &path,
-            r#"{"token": " abc \n", "default_user_key": "  ", "default_device": " pixel "}"#,
+            r#"{"token": " abc \n", "default_user_key": "  ", "default_device": " pixel ",
+                "encryption_key": " 0a1b \n"}"#,
         )
         .unwrap();
         let config = load(&path).unwrap();
@@ -135,6 +141,7 @@ mod tests {
                 token: "abc".into(),
                 default_user_key: None,
                 default_device: Some("pixel".into()),
+                encryption_key: Some("0a1b".into()),
             }
         );
     }

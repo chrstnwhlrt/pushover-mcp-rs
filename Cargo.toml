@@ -15,9 +15,9 @@ categories = ["api-bindings", "command-line-utilities"]
 # this server does not serve.
 rmcp = { version = "3.9", default-features = false, features = ["server", "macros", "transport-io"] }
 
-# Async runtime: connection limit and receipt poll lock (sync), receipt poll
-# spacing (time)
-tokio = { version = "1.54", features = ["rt-multi-thread", "macros", "sync", "time"] }
+# Async runtime on one thread (rt): connection limit and receipt poll lock
+# (sync), receipt poll spacing (time)
+tokio = { version = "1.54", features = ["rt", "macros", "sync", "time"] }
 
 # Serialization
 serde = { version = "1.0.229", features = ["derive"] }
@@ -32,6 +32,13 @@ chrono = { version = "0.4.45", default-features = false, features = ["alloc"] }
 # with serde_json directly, so the json feature is not needed; HTTP/2 brings
 # nothing for a handful of small requests.
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "form", "multipart"] }
+
+# End-to-end encryption (encryption_key in the config): AES-256-CBC, HMAC
+# and random IVs from aws-lc-rs, which rustls brings for TLS anyway; gzip
+# before encrypting and Base64 after, as Pushover's apps expect
+aws-lc-rs = { version = "1.19.0", default-features = false, features = ["aws-lc-sys"] }
+base64 = "0.23.1"
+flate2 = "1.1.11"
 
 # Error handling
 anyhow = "1.0.104"

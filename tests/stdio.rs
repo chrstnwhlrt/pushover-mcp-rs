@@ -21,6 +21,8 @@ const USER: &str = "uQiRzpo4DXghDmr9QzzfQu27cmVRsG";
 const RECEIPT: &str = "KAWxmB7eX5spZ1aR3H4hQNa5jxzq5j";
 /// What a model names as sender of its notifications.
 const SENDER: &str = "Claude (stdio test)";
+/// A key for end-to-end encryption, as `openssl rand -hex 32` makes one.
+const E2EE_KEY: &str = "5f1c0e9a8b7d6c4e3a2f1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e";
 
 /// The protocol versions the server supports, oldest first.
 const PROTOCOL_VERSIONS: [&str; 5] = [
@@ -494,6 +496,40 @@ fn write_config(dir: &TempDir, config: &Value) -> PathBuf {
 /// A config with token and user key.
 fn config(dir: &TempDir) -> PathBuf {
     write_config(dir, &json!({"token": TOKEN, "default_user_key": USER}))
+}
+
+/// What Pushover's apps do with an end-to-end encrypted field: check the
+/// HMAC over IV and ciphertext, decrypt with AES-256-CBC and unpack gzip.
+fn decrypt(value: &str) -> String {
+    use aws_lc_rs::cipher::{
+        AES_256, DecryptionContext, PaddedBlockDecryptingKey, UnboundCipherKey,
+    };
+    use base64::Engine;
+
+    let key: Vec<u8> = (0..E2EE_KEY.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&E2EE_KEY[i..i + 2], 16).unwrap())
+        .collect();
+    let sealed = base64::engine::general_purpose::STANDARD
+        .decode(value)
+        .expect("Base64");
+    let (signed, tag) = sealed.split_at(sealed.len() - 32);
+    let hmac_key = aws_lc_rs::hmac::Key::new(aws_lc_rs::hmac::HMAC_SHA256, &key);
+    aws_lc_rs::hmac::verify(&hmac_key, signed, tag).expect("the tag fits");
+    let (iv, ciphertext) = signed.split_at(16);
+    let iv: [u8; 16] = iv.try_into().unwrap();
+    let mut ciphertext = ciphertext.to_vec();
+    let cipher =
+        PaddedBlockDecryptingKey::cbc_pkcs7(UnboundCipherKey::new(&AES_256, &key).unwrap())
+            .unwrap();
+    let compressed = cipher
+        .decrypt(&mut ciphertext, DecryptionContext::Iv128(iv.into()))
+        .expect("decrypts");
+    let mut plaintext = String::new();
+    flate2::read::GzDecoder::new(&compressed[..])
+        .read_to_string(&mut plaintext)
+        .expect("gzip");
+    plaintext
 }
 
 fn field<'a>(fields: &'a [(String, String)], name: &str) -> Option<&'a str> {
@@ -1383,6 +1419,67 @@ fn missing_credentials_name_the_config_file_and_edits_apply_at_once() {
 }
 
 #[test]
+fn an_encryption_key_encrypts_the_message_fields() {
+    let dir = TempDir::new().unwrap();
+    let config = write_config(
+        &dir,
+        &json!({"token": TOKEN, "default_user_key": USER, "encryption_key": E2EE_KEY}),
+    );
+    let api = FakeApi::start();
+    let mut server = Server::ready(&config, &api);
+
+    let result = server.call_ok(
+        "send_notification",
+        &json!({"sender": SENDER, "message": "Der Tresor ist offen", "title": "Haus",
+                "url": "https://example.com/tresor", "url_title": "Kamera", "priority": "high",
+                "sound": "siren"}),
+    );
+    assert_eq!(result, json!({"request_id": "req-message"}));
+
+    let fields = api.requests().pop().unwrap().fields();
+    assert_eq!(field(&fields, "encrypted"), Some("1"));
+    for (name, plain) in [
+        ("message", "Der Tresor ist offen"),
+        ("title", "Claude (stdio test): Haus"),
+        ("url", "https://example.com/tresor"),
+        ("url_title", "Kamera"),
+    ] {
+        let sent = field(&fields, name).unwrap();
+        assert!(
+            !sent.contains(plain),
+            "{name} went out in the clear: {sent}"
+        );
+        assert_eq!(decrypt(sent), plain, "{name}");
+    }
+    // The other fields stay readable for Pushover, which delivers by them.
+    assert_eq!(field(&fields, "priority"), Some("1"));
+    assert_eq!(field(&fields, "sound"), Some("siren"));
+    assert_eq!(field(&fields, "token"), Some(TOKEN));
+}
+
+#[test]
+fn an_invalid_encryption_key_stops_sending_and_stays_private() {
+    let dir = TempDir::new().unwrap();
+    let path = write_config(
+        &dir,
+        &json!({"token": TOKEN, "default_user_key": USER, "encryption_key": "my-secret-passphrase"}),
+    );
+    let api = FakeApi::start();
+    let mut server = Server::ready(&path, &api);
+
+    let error = server.call_err(
+        "send_notification",
+        &json!({"sender": SENDER, "message": "x"}),
+    );
+    assert!(error.contains("encryption_key"), "{error}");
+    assert!(error.contains(&path.display().to_string()), "{error}");
+    assert!(!error.contains("my-secret-passphrase"), "{error}");
+    assert!(api.requests().is_empty(), "{:?}", api.requests());
+    // Only sending needs the key.
+    server.call_ok("list_sounds", &json!({}));
+}
+
+#[test]
 fn the_first_start_writes_a_private_config_template() {
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("pushover").join("config.json");
@@ -1392,7 +1489,7 @@ fn the_first_start_writes_a_private_config_template() {
     let template: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
     assert_eq!(
         template,
-        json!({"token": "", "default_user_key": null, "default_device": null})
+        json!({"token": "", "default_user_key": null, "default_device": null, "encryption_key": null})
     );
     #[cfg(unix)]
     {
